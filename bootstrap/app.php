@@ -13,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Detrás del balanceador de Render/Fly el TLS termina antes de llegar a PHP;
+        // sin esto Laravel genera URLs http:// y cree que la petición no es segura.
+        $middleware->trustProxies(at: '*');
+
         // Necesario para que Flutter Web use cookies de sesión de Sanctum (SPA);
         // Android/iOS usan tokens Bearer normales y no pasan por aquí.
         $middleware->api(prepend: [

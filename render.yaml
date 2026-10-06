@@ -1,0 +1,36 @@
+# Blueprint de Render: New + > Blueprint > elegir este repo.
+# Los valores con sync:false se capturan en el dashboard (secretos, no van en git).
+services:
+  - type: web
+    name: agrolink-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - { key: APP_NAME, value: AgroLink }
+      - { key: APP_ENV, value: production }
+      - { key: APP_DEBUG, value: "false" }
+      - { key: APP_LOCALE, value: es }
+      - { key: APP_KEY, sync: false }
+      - { key: APP_URL, sync: false }          # https://agrolink-api.onrender.com
+      - { key: LOG_CHANNEL, value: stderr }
+      - { key: LOG_LEVEL, value: warning }
+      - { key: DB_CONNECTION, value: pgsql }
+      - { key: DB_HOST, sync: false }
+      - { key: DB_PORT, value: "5432" }
+      - { key: DB_DATABASE, value: postgres }
+      - { key: DB_USERNAME, sync: false }
+      - { key: DB_PASSWORD, sync: false }
+      - { key: DB_SSLMODE, value: require }
+      - { key: DB_SEARCH_PATH, value: "public,extensions" }
+      - { key: SESSION_DRIVER, value: database }
+      - { key: CACHE_STORE, value: database }
+      - { key: QUEUE_CONNECTION, value: database }
+      - { key: FILESYSTEM_DISK, value: s3 }
+      - { key: AWS_ACCESS_KEY_ID, sync: false }
+      - { key: AWS_SECRET_ACCESS_KEY, sync: false }
+      - { key: AWS_DEFAULT_REGION, sync: false }
+      - { key: AWS_BUCKET, value: listings }
+      - { key: AWS_ENDPOINT, sync: false }
+      - { key: AWS_URL, sync: false }
+      - { key: AWS_USE_PATH_STYLE_ENDPOINT, value: "true" }
