@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict lfnUbAuQTfYHAU0jt8dlmPZVSdESuAvAeFmOk0zaY4YuflUg12uL3aNneYcMRHu
+\restrict 6VGZj91gQI0rrzSPXEeAU3YlzsUUfos5FucyPLAeAOTv7Eho1hwgJTteLEPtU6v
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -283,6 +283,41 @@ CREATE SEQUENCE public.categorias_id_seq
 --
 
 ALTER SEQUENCE public.categorias_id_seq OWNED BY public.categorias.id;
+
+
+--
+-- Name: codigos_verificacion_contacto; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.codigos_verificacion_contacto (
+    id bigint NOT NULL,
+    usuario_id bigint NOT NULL,
+    canal character varying(10) NOT NULL,
+    destino character varying(180) NOT NULL,
+    codigo_hash character varying(255) NOT NULL,
+    intentos smallint DEFAULT '0'::smallint NOT NULL,
+    expira_en timestamp(0) without time zone NOT NULL,
+    creado_en timestamp(0) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: codigos_verificacion_contacto_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.codigos_verificacion_contacto_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: codigos_verificacion_contacto_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.codigos_verificacion_contacto_id_seq OWNED BY public.codigos_verificacion_contacto.id;
 
 
 --
@@ -1351,7 +1386,8 @@ CREATE TABLE public.usuarios (
     actualizado_en timestamp(0) without time zone,
     eliminado_en timestamp(0) without time zone,
     dos_factores_ultimo_paso bigint,
-    apellidos character varying(150)
+    apellidos character varying(150),
+    telefono_verificado_en timestamp(0) without time zone
 );
 
 
@@ -1470,6 +1506,13 @@ ALTER TABLE ONLY public.busquedas_guardadas ALTER COLUMN id SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.categorias ALTER COLUMN id SET DEFAULT nextval('public.categorias_id_seq'::regclass);
+
+
+--
+-- Name: codigos_verificacion_contacto id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codigos_verificacion_contacto ALTER COLUMN id SET DEFAULT nextval('public.codigos_verificacion_contacto_id_seq'::regclass);
 
 
 --
@@ -1730,6 +1773,14 @@ ALTER TABLE ONLY public.categorias
 
 ALTER TABLE ONLY public.categorias
     ADD CONSTRAINT categorias_slug_unique UNIQUE (slug);
+
+
+--
+-- Name: codigos_verificacion_contacto codigos_verificacion_contacto_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codigos_verificacion_contacto
+    ADD CONSTRAINT codigos_verificacion_contacto_pkey PRIMARY KEY (id);
 
 
 --
@@ -2178,6 +2229,13 @@ CREATE INDEX busquedas_guardadas_usuario_id_index ON public.busquedas_guardadas 
 
 
 --
+-- Name: codigos_verificacion_contacto_usuario_id_canal_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX codigos_verificacion_contacto_usuario_id_canal_index ON public.codigos_verificacion_contacto USING btree (usuario_id, canal);
+
+
+--
 -- Name: conversaciones_vendedor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2388,6 +2446,14 @@ ALTER TABLE ONLY public.busquedas_guardadas
 
 ALTER TABLE ONLY public.categorias
     ADD CONSTRAINT categorias_categoria_padre_id_foreign FOREIGN KEY (categoria_padre_id) REFERENCES public.categorias(id) ON DELETE SET NULL;
+
+
+--
+-- Name: codigos_verificacion_contacto codigos_verificacion_contacto_usuario_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.codigos_verificacion_contacto
+    ADD CONSTRAINT codigos_verificacion_contacto_usuario_id_foreign FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
 
 
 --
@@ -2802,5 +2868,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict lfnUbAuQTfYHAU0jt8dlmPZVSdESuAvAeFmOk0zaY4YuflUg12uL3aNneYcMRHu
+\unrestrict 6VGZj91gQI0rrzSPXEeAU3YlzsUUfos5FucyPLAeAOTv7Eho1hwgJTteLEPtU6v
 
