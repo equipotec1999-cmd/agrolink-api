@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Tests\ApiTestCase;
 
 class AuthTest extends ApiTestCase
@@ -17,9 +19,24 @@ class AuthTest extends ApiTestCase
         ]);
     }
 
-    public function test_registro_crea_usuario_y_entrega_token(): void
+    /** El registro deja la cuenta pendiente; esta prueba la verifica con un código conocido. */
+    private function registerAndVerify(array $over = []): string
     {
-        $this->register()->assertCreated()->assertJsonStructure(['user' => ['id', 'email'], 'token']);
+        $email = $over['email'] ?? 'ana@example.com';
+        $this->register($over)->assertCreated();
+        DB::table('codigos_verificacion_contacto')->update(['codigo_hash' => Hash::make('654321'), 'intentos' => 0]);
+        $token = $this->postJson('/api/verify-contact', ['destination' => $email, 'code' => '654321', 'device_name' => 'test'])
+            ->assertOk()->json('token');
+
+        return $token;
+    }
+
+    public function test_registro_crea_usuario_pendiente_de_verificacion(): void
+    {
+        $this->register()
+            ->assertCreated()
+            ->assertJsonPath('verification.channel', 'email')
+            ->assertJsonMissing(['token']);
 
         $this->assertDatabaseHas('usuarios', ['correo' => 'ana@example.com']);
     }
@@ -47,7 +64,7 @@ class AuthTest extends ApiTestCase
     {
         $this->getJson('/api/me')->assertUnauthorized();
 
-        $token = $this->register()->json('token');
+        $token = $this->registerAndVerify();
         $this->withToken($token)->getJson('/api/me')->assertOk()->assertJsonPath('data.email', 'ana@example.com');
 
         $this->withToken($token)->postJson('/api/logout')->assertOk();
