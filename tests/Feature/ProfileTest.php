@@ -44,6 +44,7 @@ class ProfileTest extends ApiTestCase
 
     public function test_subir_avatar_devuelve_url(): void
     {
+        config(['filesystems.default' => 'local']);
         Storage::fake('local');
         $user = $this->makeUser();
 
@@ -55,6 +56,7 @@ class ProfileTest extends ApiTestCase
 
     public function test_subir_avatar_rechaza_archivos_no_imagen(): void
     {
+        config(['filesystems.default' => 'local']);
         Storage::fake('local');
         $user = $this->makeUser();
         $this->actingAs($user, 'sanctum')
