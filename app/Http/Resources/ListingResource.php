@@ -48,8 +48,8 @@ class ListingResource extends JsonResource
             'location' => $this->whenLoaded('location', fn () => [
                 'state' => $this->location->estado,
                 'municipality' => $this->location->municipio,
-                'approx_lat' => $this->location->approx_lat,
-                'approx_lng' => $this->location->approx_lng,
+                'approx_lat' => $this->location->approx_lat !== null ? (float) $this->location->approx_lat : null,
+                'approx_lng' => $this->location->approx_lng !== null ? (float) $this->location->approx_lng : null,
             ]),
             'attributes' => $this->atributos_cache,
             'media' => ListingMediaResource::collection($this->whenLoaded('media')),
