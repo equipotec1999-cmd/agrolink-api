@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict NShsEHrKNdV5OhIOgXTCjNVR1we2gZkQgBIjHw01rLE9hBJ4lXul1k11YnhyQDF
+\restrict KGRF3zGAhMWDxqGpgOs3gJo5WfG2GvaDLNzo9NamtQQdqlnRUiEfsFlqEBy8kjO
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -2875,5 +2875,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict NShsEHrKNdV5OhIOgXTCjNVR1we2gZkQgBIjHw01rLE9hBJ4lXul1k11YnhyQDF
+\unrestrict KGRF3zGAhMWDxqGpgOs3gJo5WfG2GvaDLNzo9NamtQQdqlnRUiEfsFlqEBy8kjO
 
