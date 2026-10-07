@@ -470,3 +470,10 @@ Token de notificaciones push (Firebase) de cada celular con sesión. *(tabla nue
 | `ultimo_uso_en` | fecha y hora | sí | — |
 | `creado_en` | fecha y hora | sí | — |
 | `actualizado_en` | fecha y hora | sí | — |
+
+## Columnas agregadas en la Fase 6
+
+| Tabla | Columna | Tipo | Para qué |
+|---|---|---|---|
+| `publicaciones` | `motivo_moderacion` | texto (300), nulo | Motivo del último rechazo/suspensión; lo ve el dueño. |
+| `usuarios` | `dos_factores_ultimo_paso` | entero grande, nulo | Último intervalo TOTP aceptado (evita reusar un código). |

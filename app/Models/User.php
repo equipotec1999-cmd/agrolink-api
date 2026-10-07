@@ -60,6 +60,25 @@ class User extends Authenticatable
         ];
     }
 
+    /** Permisos que convierten a una cuenta en "administrativa" y exigen 2FA. */
+    private const ADMIN_PERMISSIONS = ['manage users', 'manage catalog', 'manage compliance rules', 'view audit logs'];
+
+    public function needsTwoFactor(): bool
+    {
+        foreach (self::ADMIN_PERMISSIONS as $permission) {
+            if ($this->can($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->dos_factores_confirmado_en !== null;
+    }
+
     public function profile(): HasOne
     {
         return $this->hasOne(Profile::class, 'usuario_id');

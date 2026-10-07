@@ -60,6 +60,39 @@ class ListingController extends Controller
         return ListingResource::collection($listings);
     }
 
+    /** Mis publicaciones en cualquier estado (borrador, publicada, rechazada...), las más nuevas primero. */
+    public function mine(Request $request)
+    {
+        $listings = Listing::query()
+            ->with([
+                'productType', 'user.sellerProfile', 'media',
+                'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
+                    DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
+                    DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
+                ]),
+            ])
+            ->where('usuario_id', $request->user()->id)
+            ->orderByDesc('id')
+            ->limit(100)
+            ->get();
+
+        return ListingResource::collection($listings);
+    }
+
+    /**
+     * Reenviar a revisión una publicación rechazada o suspendida (ya corregida). Queda oculta
+     * (`pending_review`) hasta que un moderador la apruebe.
+     */
+    public function resubmit(Request $request, Listing $listing)
+    {
+        $this->authorize('publish', $listing);
+        abort_unless(in_array($listing->estatus, ['rejected', 'suspended'], true), 422, 'Solo se pueden reenviar publicaciones rechazadas o suspendidas.');
+
+        $listing->update(['estatus' => 'pending_review', 'estatus_moderacion' => 'pending']);
+
+        return new ListingResource($listing->load(['productType', 'user.sellerProfile', 'media']));
+    }
+
     public function store(StoreListingRequest $request)
     {
         $listing = $this->listings->create($request->user(), $request->validated());

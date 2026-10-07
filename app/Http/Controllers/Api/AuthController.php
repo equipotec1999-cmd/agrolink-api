@@ -51,6 +51,19 @@ class AuthController extends Controller
             ]);
         }
 
+        // Con verificación en dos pasos: solo un token pendiente (10 min) que únicamente
+        // sirve para /two-factor/challenge; el token completo llega al validar el código.
+        if ($user->hasTwoFactorEnabled()) {
+            return response()->json([
+                'requires_two_factor' => true,
+                'challenge_token' => $user->createToken(
+                    (string) $request->string('device_name'),
+                    ['two-factor-pending'],
+                    now()->addMinutes(10),
+                )->plainTextToken,
+            ]);
+        }
+
         $token = $user->createToken($request->string('device_name'))->plainTextToken;
 
         return response()->json([

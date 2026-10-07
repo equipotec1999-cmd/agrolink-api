@@ -25,6 +25,11 @@ class ListingResource extends JsonResource
             'moderation_status' => $this->estatus_moderacion,
             'published_at' => $this->publicado_en,
             'expires_at' => $this->vence_en,
+            // Solo el dueño ve el motivo del rechazo/suspensión.
+            'moderation_note' => $this->when(
+                $request->user() !== null && $request->user()->id === $this->usuario_id,
+                $this->motivo_moderacion,
+            ),
             'product_type' => [
                 'id' => $this->productType->id,
                 'name' => $this->productType->nombre,

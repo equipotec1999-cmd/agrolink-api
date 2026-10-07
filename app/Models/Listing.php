@@ -32,6 +32,7 @@ class Listing extends Modelo
         'negociable',
         'estatus',
         'estatus_moderacion',
+        'motivo_moderacion',
         'atributos_cache',
         'publicado_en',
         'vence_en',

@@ -11,16 +11,21 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OfferController;
 use App\Http\Controllers\Api\OperationController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\TwoFactorController;
 use Illuminate\Support\Facades\Route;
 
 // Auth (Fase 1 §21: rate limiting en login/registro contra fuerza bruta).
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:6,1');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
 });
+
+// Verificación en dos pasos, paso 2 del login: SOLO acepta el token pendiente.
+Route::post('/two-factor/challenge', [TwoFactorController::class, 'challenge'])
+    ->middleware(['auth:sanctum', 'ability:two-factor-pending', 'throttle:6,1']);
 
 // Catálogo: lectura pública, no requiere sesión (se necesita para poder buscar sin cuenta).
 Route::get('/categories', [CatalogController::class, 'categories']);
@@ -30,11 +35,13 @@ Route::get('/product-types/{productType}/attributes', [CatalogController::class,
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
+    Route::get('/my/listings', [ListingController::class, 'mine']);
     Route::post('/listings', [ListingController::class, 'store']);
     Route::patch('/listings/{listing}', [ListingController::class, 'update']);
     Route::delete('/listings/{listing}', [ListingController::class, 'destroy']);
     Route::post('/listings/{listing}/publish', [ListingController::class, 'publish']);
+    Route::post('/listings/{listing}/resubmit', [ListingController::class, 'resubmit']);
     Route::post('/listings/{listing}/archive', [ListingController::class, 'archive']);
     Route::post('/listings/{listing}/media', [ListingController::class, 'uploadMedia']);
     Route::delete('/listings/{listing}/media/{media}', [ListingController::class, 'destroyMedia']);
@@ -77,7 +84,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/listings/{listing}/report', [ReportController::class, 'store'])->middleware('throttle:10,1');
 
     // Solo con permiso (no por nombre de rol).
-    Route::prefix('moderation')->group(function () {
+    Route::prefix('moderation')->middleware('two-factor')->group(function () {
         Route::middleware('can:moderate listings')->group(function () {
             Route::get('/listings', [ModerationController::class, 'listings']);
             Route::post('/listings/{listing}/approve', [ModerationController::class, 'approve']);
@@ -88,4 +95,9 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/reports/{report}/resolve', [ModerationController::class, 'resolveReport']);
         });
     });
+
+    // Activar/desactivar la verificación en dos pasos (sesión completa).
+    Route::post('/two-factor/setup', [TwoFactorController::class, 'setup'])->middleware('throttle:10,1');
+    Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirm'])->middleware('throttle:10,1');
+    Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->middleware('throttle:6,1');
 });

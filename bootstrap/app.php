@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Necesario para que Flutter Web use cookies de sesión de Sanctum (SPA);
         // Android/iOS usan tokens Bearer normales y no pasan por aquí.
+        $middleware->alias([
+            'full.session' => \App\Http\Middleware\EnsureFullSession::class,
+            'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
+            'two-factor' => \App\Http\Middleware\RequireTwoFactor::class,
+        ]);
+
         $middleware->api(prepend: [
             EnsureFrontendRequestsAreStateful::class,
         ]);

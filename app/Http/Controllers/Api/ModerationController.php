@@ -50,9 +50,12 @@ class ModerationController extends Controller
                 ->where('reportable_tipo', 'listing')
                 ->whereIn('estatus', ['open', 'investigating'])])
             ->addSelect('publicaciones.*')
-            ->where('estatus', 'published')
-            ->where('estatus_moderacion', 'pending')
-            ->orderBy('publicado_en')
+            // Publicadas sin revisar + reenviadas por su dueño tras un rechazo/suspensión
+            // (estas últimas siguen ocultas hasta que se aprueben).
+            ->where(fn ($q) => $q
+                ->where(fn ($p) => $p->where('estatus', 'published')->where('estatus_moderacion', 'pending'))
+                ->orWhere('estatus', 'pending_review'))
+            ->orderBy('actualizado_en')
             ->limit(50)
             ->get();
 
@@ -64,7 +67,16 @@ class ModerationController extends Controller
     public function approve(Request $request, Listing $listing)
     {
         $before = $listing->estatus_moderacion;
-        $listing->update(['estatus_moderacion' => 'approved']);
+        $update = ['estatus_moderacion' => 'approved', 'motivo_moderacion' => null];
+        // Una reenviada tras rechazo/suspensión vuelve a ser visible al aprobarse.
+        if ($listing->estatus === 'pending_review') {
+            $update += [
+                'estatus' => 'published',
+                'publicado_en' => now(),
+                'vence_en' => now()->addDays($listing->productType->dias_vigencia_predeterminados),
+            ];
+        }
+        $listing->update($update);
         $this->audit($request, 'listing.approved', 'listing', $listing->id, ['antes' => $before]);
 
         return response()->noContent();
@@ -76,7 +88,7 @@ class ModerationController extends Controller
         $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:300']]);
 
         DB::transaction(function () use ($request, $listing, $data) {
-            $listing->update(['estatus_moderacion' => 'rejected', 'estatus' => 'rejected']);
+            $listing->update(['estatus_moderacion' => 'rejected', 'estatus' => 'rejected', 'motivo_moderacion' => $data['reason']]);
             $this->audit($request, 'listing.rejected', 'listing', $listing->id, ['motivo' => $data['reason']]);
         });
         NotificationService::listingModerated('listing_rejected', $listing, $data['reason']);
@@ -143,7 +155,7 @@ class ModerationController extends Controller
             $close = ['estatus' => $status, 'resuelto_por' => $request->user()->id, 'resuelto_en' => now(), 'nota_resolucion' => $data['note'] ?? null];
 
             if ($data['action'] === 'hide_listing') {
-                $listing->update(['estatus' => 'suspended']);
+                $listing->update(['estatus' => 'suspended', 'motivo_moderacion' => $data['note'] ?? 'Suspendida tras un reporte.']);
                 Report::where('reportable_tipo', 'listing')->where('reportable_id', $listing->id)
                     ->whereIn('estatus', ['open', 'investigating'])->update($close);
             } else {

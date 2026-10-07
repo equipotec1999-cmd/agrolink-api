@@ -30,6 +30,9 @@ class UserResource extends JsonResource
             ]),
             // La app muestra la sección de moderación solo si hay algún permiso de moderación
             // (se comprueba por permiso, nunca por nombre de rol).
+            'two_factor_enabled' => $this->hasTwoFactorEnabled(),
+            // Cuenta administrativa sin 2FA: la app la manda a activarlo.
+            'two_factor_required' => $this->needsTwoFactor() && ! $this->hasTwoFactorEnabled(),
             'can_moderate' => $this->can('moderate listings') || $this->can('resolve reports'),
             'created_at' => $this->creado_en,
         ];
