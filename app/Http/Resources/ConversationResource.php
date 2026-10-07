@@ -21,6 +21,9 @@ class ConversationResource extends JsonResource
                 'id' => $this->listing->id,
                 'title' => $this->listing->titulo,
                 'status' => $this->listing->estatus,
+                'price' => $this->listing->precio,
+                'price_type' => $this->listing->tipo_precio,
+                'product_type_id' => $this->listing->tipo_producto_id,
                 'cover_url' => $cover
                     ? Storage::disk(config('filesystems.default'))->url($cover->ruta_almacenamiento)
                     : null,

@@ -19,7 +19,7 @@ class ConversationController extends Controller
     private function withRelations()
     {
         return Conversation::query()->with([
-            'listing:id,titulo,estatus',
+            'listing:id,titulo,estatus,precio,tipo_precio,tipo_producto_id',
             'listing.media',
             'buyer:id,nombre',
             'seller:id,nombre',
