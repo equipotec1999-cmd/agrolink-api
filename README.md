@@ -1,122 +1,95 @@
-# AgroLink API — Fase 3
+# AgroLink API
 
-Backend Laravel del marketplace agropecuario. Migraciones **confirmadas contra un
-`php artisan migrate` real** (Postgres 17, corrido en tu máquina el 25/sep/2026). Esta
-entrega agrega Models, Policies, RBAC por permisos, el seeder del catálogo real y los
-primeros endpoints: Auth, Catalog y Listings.
+Backend del marketplace agropecuario **AgroLink** para México. Laravel 11 + PostgreSQL con PostGIS + Supabase Storage, desplegado en Render con Docker. La app móvil Flutter vive en [`agrolink`](https://github.com/equipotec1999-cmd/agrolink).
 
-## Bug real encontrado y corregido (ya en las migraciones)
+**Estado:** Fase 8 (producción). Las fases anteriores (arquitectura, base de datos, backend, Flutter, chat/ofertas, moderación, pruebas) están cerradas. CI corre con GitHub Actions en cada *push*.
 
-`unaccent()` de Postgres no es `IMMUTABLE` y, además, el nombre del diccionario debe ir
-calificado con esquema al llamarse desde una función SQL que se inlinea dentro de un
-índice. La función `immutable_unaccent()` (migración `2026_01_15_000000`) quedó así:
+## Qué hace
 
-```sql
-SELECT public.unaccent('public.unaccent'::regdictionary, $1)
-```
+- **Autenticación** con Sanctum (tokens Bearer para móvil, sesiones para web).
+- **Verificación en dos pasos (2FA)** obligatoria para administradores. TOTP compatible con Google Authenticator y Authy, más códigos de respaldo.
+- **Catálogo** jerárquico de categorías, tipos de producto y atributos dinámicos por tipo.
+- **Publicaciones** con fotos, documentos, ubicación aproximada (±1 km, PostGIS) y moderación.
+- **Chat y ofertas**: conversaciones por publicación, ofertas y contraofertas, aceptación crea una operación.
+- **Operaciones y reseñas**: ciclo completo compra/venta con eventos y calificación por aspecto.
+- **Moderación**: cola de publicaciones, reportes, verificación de vendedores (INE + comprobante) y reglas de cumplimiento.
+- **Notificaciones** por push (Firebase) y en la app, con bitácora de auditoría.
+- **Búsquedas guardadas** y favoritos.
 
-Confirmado con `php artisan migrate` real, no solo con SQL suelto.
+## Pila
 
-## Cómo levantarlo desde cero
+- PHP 8.3, Laravel 11, PHPUnit.
+- PostgreSQL 16 + PostGIS 3 (Supabase en producción, Postgres local o Docker en desarrollo).
+- Supabase Storage (compatible S3) para fotos y documentos. Un bucket público para fotos y otro **privado** para documentos de verificación.
+- Spatie Laravel Permission para permisos y roles.
+- Firebase Cloud Messaging para push.
+- Render (contenedor Docker) para el deploy.
+
+## Levantar en tu máquina
 
 ```bash
-composer install --no-security-blocking   # ver nota abajo
+composer install
 cp .env.example .env
 php artisan key:generate
 
 createdb agrolink
 psql agrolink -c "CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS unaccent;"
 
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
-php artisan migrate
-php artisan db:seed
+php artisan migrate --seed
+php artisan serve --host=0.0.0.0
 ```
 
-`--no-security-blocking`: Composer bloquea por defecto instalar paquetes con advisories de
-seguridad reportadas, incluso parches menores. Es una bandera de una sola vez, no cambia
-nada permanente; para producción (Fase 8) hay que revisar esas advisories puntuales antes
-de desplegar.
+El seeder `DatabaseSeeder` crea el catálogo, los roles y un usuario de prueba `test@example.com` (solo en desarrollo).
 
-`php artisan db:seed` corre:
-- **RolesAndPermissionsSeeder**: roles `vendedor`/`moderador`/`administrador`, pero el
-  código nunca debe comprobar el nombre del rol — siempre `$user->can('permiso')`
-  (Fase 1 §7, regla §20).
-- **CatalogSeeder**: las mismas categorías/tipos/atributos que ya están en
-  `lib/features/catalog/data/mock/mock_catalog.dart` del prototipo Flutter — ver la nota
-  de desviación dentro del propio seeder: algunos atributos (`raza`, `proposito`,
-  `estado_sanitario`, etc.) tienen opciones distintas según el tipo de producto, así que
-  en la BD llevan clave interna sufijada (`raza_equino`, `raza_bovino`...) aunque el
-  `label` que ve el usuario siga siendo el mismo ("Raza"). El catálogo global en Postgres
-  no puede tener dos listas de opciones distintas bajo la misma clave.
-
-## Endpoints de esta entrega
-
-```
-POST   /api/register
-POST   /api/login
-POST   /api/logout            (auth:sanctum)
-GET    /api/me                (auth:sanctum)
-
-GET    /api/categories
-GET    /api/product-types/{id}/attributes
-
-GET    /api/listings
-GET    /api/listings/{id}
-POST   /api/listings          (auth:sanctum)
-PATCH  /api/listings/{id}     (auth:sanctum, dueño)
-DELETE /api/listings/{id}     (auth:sanctum, dueño)
-POST   /api/listings/{id}/publish   (auth:sanctum, dueño)
-POST   /api/listings/{id}/archive   (auth:sanctum, dueño)
-POST   /api/listings/{id}/media        (auth:sanctum, dueño) — sube UNA foto (multipart)
-DELETE /api/listings/{id}/media/{mid}  (auth:sanctum, dueño)
-```
-
-### Fotos en desarrollo local: usa el disco `public`, no `s3`
-
-`.env.example` trae `FILESYSTEM_DISK=s3` (lo correcto para producción), pero en tu máquina
-no hay bucket real configurado. Para que subir fotos funcione en local, en tu `.env`:
-
-```
-FILESYSTEM_DISK=public
-```
-
-y corre una vez:
+## Pruebas
 
 ```bash
-php artisan storage:link
+php artisan test
 ```
 
-(crea el symlink `public/storage -> storage/app/public` para que las URLs de
-`ListingMediaResource` sirvan las fotos). En producción (Fase 8) se vuelve a `s3` apuntando
-al bucket real — el código no cambia, solo la config.
-
-`publish` es la acción que implementa "se publica primero, se aprueba después"
-(confirmado 25/sep): pone `status=published` y calcula `expires_at`, sin tocar
-`moderation_status` — eso lo hace un módulo de moderación aparte (Fase 6).
-
-## Pendiente / no incluido aún en esta entrega
-
-- **2FA de administradores** (Fase 1 §21): las columnas ya existen en `users`, pero la
-  lógica de TOTP (generar secreto, QR, confirmar código) no está implementada todavía —
-  no quise dejar una versión a medias o simulada.
-- Chat/ofertas, moderación, reportes, reseñas: sus tablas y Models ya existen, pero sin
-  Controllers todavía (Fase 5/6 del plan).
-- Búsqueda en lenguaje natural (el parser que ya vive en el prototipo Flutter) — el
-  endpoint `GET /api/listings` solo tiene filtro de texto simple por ahora.
-
-## Estructura de este paquete
-
-```
-app/Models/            25 modelos Eloquent, uno por tabla del MVP
-app/Http/Controllers/Api/   Auth, Catalog, Listings
-app/Http/Requests/     FormRequests con validación server-side completa (regla §20)
-app/Http/Resources/    nunca exponen ubicación exacta (Fase 1 §6)
-app/Policies/           ListingPolicy (autorización por dueño, no por rol)
-app/Services/           ListingService (lógica de publicar/atributos dinámicos/ubicación)
-database/seeders/       CatalogSeeder + RolesAndPermissionsSeeder
-database/migrations/    31 migraciones (30 propias + RBAC de spatie)
-routes/api.php
-```
+67 pruebas que cubren autenticación, 2FA, publicaciones, moderación, chat, ofertas, reglas de cumplimiento, búsquedas guardadas, verificación de vendedores y utilidades de producción. CI corre esto mismo en cada *push* contra PostgreSQL con PostGIS.
 
 ## Base de datos
-Tablas y columnas del dominio en español: ver [`docs/DICCIONARIO_DATOS.md`](docs/DICCIONARIO_DATOS.md). La API JSON conserva sus claves en inglés.
+
+- Las tablas y columnas del dominio están en **español**: `usuarios`, `publicaciones`, `conversaciones`, `ofertas`, `operaciones`, `estatus`, `creado_en`, etcétera. Las tablas técnicas (`cache`, `jobs`, `sessions`, `personal_access_tokens`, `roles`, `permissions`) se quedan en inglés porque son del framework y sus paquetes.
+- Los **valores de estatus también están en español**: `borrador`, `en_revision`, `publicada`, `rechazada`, `pendiente`, `aprobada`, `enviada`, `aceptada`, `contraoferta`, `retirada`, `vencida`, `abierto`, `resuelto`, `foto`, `ocultar_publicacion`, `descartar`.
+- Documentación completa en [`docs/DICCIONARIO_DATOS.md`](docs/DICCIONARIO_DATOS.md). El esquema SQL y el catálogo inicial están en [`docs/schema.sql`](docs/schema.sql) y [`docs/semillas.sql`](docs/semillas.sql) (los regenera un workflow al cambiar las migraciones).
+
+## Producción
+
+Guía completa en [`docs/PRODUCCION.md`](docs/PRODUCCION.md). Resumen:
+
+1. **Rotar claves** `APP_KEY`, contraseña de la BD y llaves S3.
+2. **Bucket privado** `verificaciones` para INE y comprobantes.
+3. **Crear administrador** con `ADMIN_EMAIL` en Render o `php artisan agrolink:crear-admin`.
+4. **Revisar configuración** con `php artisan agrolink:preflight` (sale en los logs al arrancar).
+5. **Lista de revisión** antes del lanzamiento (plan de pago en Render, Firebase, aviso de privacidad, firma del APK...).
+
+## Endpoints
+
+Todos están bajo `/api`. Los principales:
+
+| Camino | Qué hace |
+|---|---|
+| `POST /register`, `POST /login` | Registro y login (devuelven token Bearer) |
+| `POST /two-factor/setup`, `/confirm`, `/complete` | Activar y usar 2FA |
+| `GET /categories` | Catálogo (categorías, tipos, atributos) |
+| `GET /listings`, `GET /listings/{id}` | Feed, búsqueda y detalle |
+| `POST /listings` | Crear borrador |
+| `POST /listings/{id}/media` | Subir foto |
+| `POST /listings/{id}/publish` | Enviar a revisión |
+| `GET /conversations`, `POST /conversations` | Chat |
+| `POST /conversations/{id}/offers` | Hacer oferta |
+| `POST /offers/{id}/accept`, `/reject`, `/counter` | Responder oferta |
+| `GET /me`, `PATCH /me`, `POST /me/password` | Mi cuenta |
+| `GET /me/stats` | Mis cifras (operaciones, calificación) |
+| `GET /verification`, `POST /verification` | Verificación de vendedor |
+| `GET /moderation/queue`, `/reports`, `/verifications` | Cola de moderación |
+| `GET /saved-searches` | Búsquedas guardadas |
+| `GET /admin/compliance-rules` | Reglas de cumplimiento (solo admin) |
+
+Las claves JSON de la API siguen en inglés (`title`, `price`, `status`...) para que el contrato con la app sea estable; los valores de `status` ahora llegan en español (`publicada`, `enviada`, etc.).
+
+## Despliegue
+
+El Dockerfile y el workflow de Render están en el repositorio. Cada `git push` a `main` redepliega automáticamente; el contenedor migra la base, siembra roles y catálogo, crea el administrador si pusiste `ADMIN_EMAIL`, y corre `agrolink:preflight` dejando el resultado en los logs.
