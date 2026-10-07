@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict a8zrelBNh7HV5blmOBM9jeMcjlc1zvfOHxOyyFD3sBiSPU4dZh5UQAxKdSYEG2Q
+\restrict KPvyRcHfpwnndWuwyZrZzaSgDL0WVNJhrLbaoIHczy2uQUC0b7EhjWY1gZic3ME
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -328,13 +328,13 @@ CREATE TABLE public.documentos_publicacion (
     publicacion_id bigint NOT NULL,
     nombre character varying(180) NOT NULL,
     ruta_almacenamiento character varying(255) NOT NULL,
-    estatus character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    estatus character varying(255) DEFAULT 'pendiente'::character varying NOT NULL,
     nota character varying(255),
     revisado_por bigint,
     revisado_en timestamp(0) without time zone,
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
-    CONSTRAINT documentos_publicacion_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['pending'::character varying, 'verified'::character varying, 'rejected'::character varying, 'expired'::character varying, 'not_applicable'::character varying])::text[])))
+    CONSTRAINT documentos_publicacion_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['pendiente'::character varying, 'verified'::character varying, 'rechazada'::character varying, 'vencida'::character varying, 'not_applicable'::character varying])::text[])))
 );
 
 
@@ -552,7 +552,7 @@ ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
 CREATE TABLE public.medios_publicacion (
     id bigint NOT NULL,
     publicacion_id bigint NOT NULL,
-    tipo character varying(255) DEFAULT 'photo'::character varying NOT NULL,
+    tipo character varying(255) DEFAULT 'foto'::character varying NOT NULL,
     ruta_almacenamiento character varying(255) NOT NULL,
     posicion smallint DEFAULT '0'::smallint NOT NULL,
     ancho smallint,
@@ -560,7 +560,7 @@ CREATE TABLE public.medios_publicacion (
     duracion_segundos smallint,
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
-    CONSTRAINT medios_publicacion_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['photo'::character varying, 'video'::character varying])::text[])))
+    CONSTRAINT medios_publicacion_tipo_check CHECK (((tipo)::text = ANY ((ARRAY['foto'::character varying, 'video'::character varying])::text[])))
 );
 
 
@@ -698,11 +698,11 @@ CREATE TABLE public.ofertas (
     remitente_id bigint NOT NULL,
     monto numeric(14,2) NOT NULL,
     cantidad numeric(12,2) DEFAULT '1'::numeric NOT NULL,
-    estatus character varying(255) DEFAULT 'sent'::character varying NOT NULL,
+    estatus character varying(255) DEFAULT 'enviada'::character varying NOT NULL,
     vence_en timestamp(0) without time zone,
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
-    CONSTRAINT ofertas_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['sent'::character varying, 'accepted'::character varying, 'rejected'::character varying, 'countered'::character varying, 'cancelled'::character varying, 'expired'::character varying])::text[])))
+    CONSTRAINT ofertas_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['enviada'::character varying, 'aceptada'::character varying, 'rechazada'::character varying, 'contraoferta'::character varying, 'cancelled'::character varying, 'vencida'::character varying])::text[])))
 );
 
 
@@ -957,8 +957,8 @@ CREATE TABLE public.publicaciones (
     unidad character varying(30) DEFAULT 'unidad'::character varying NOT NULL,
     modalidad_venta character varying(255) DEFAULT 'individual'::character varying NOT NULL,
     negociable boolean DEFAULT false NOT NULL,
-    estatus character varying(255) DEFAULT 'draft'::character varying NOT NULL,
-    estatus_moderacion character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    estatus character varying(255) DEFAULT 'borrador'::character varying NOT NULL,
+    estatus_moderacion character varying(255) DEFAULT 'pendiente'::character varying NOT NULL,
     atributos_cache jsonb DEFAULT '{}'::jsonb NOT NULL,
     publicado_en timestamp(0) without time zone,
     vence_en timestamp(0) without time zone,
@@ -966,8 +966,8 @@ CREATE TABLE public.publicaciones (
     actualizado_en timestamp(0) without time zone,
     eliminado_en timestamp(0) without time zone,
     motivo_moderacion character varying(300),
-    CONSTRAINT publicaciones_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['draft'::character varying, 'pending_review'::character varying, 'published'::character varying, 'rejected'::character varying, 'suspended'::character varying, 'sold'::character varying, 'expired'::character varying, 'archived'::character varying])::text[]))),
-    CONSTRAINT publicaciones_estatus_moderacion_check CHECK (((estatus_moderacion)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[]))),
+    CONSTRAINT publicaciones_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['borrador'::character varying, 'en_revision'::character varying, 'publicada'::character varying, 'rechazada'::character varying, 'suspended'::character varying, 'sold'::character varying, 'vencida'::character varying, 'archivada'::character varying])::text[]))),
+    CONSTRAINT publicaciones_estatus_moderacion_check CHECK (((estatus_moderacion)::text = ANY ((ARRAY['pendiente'::character varying, 'aprobada'::character varying, 'rechazada'::character varying])::text[]))),
     CONSTRAINT publicaciones_modalidad_venta_check CHECK (((modalidad_venta)::text = ANY ((ARRAY['individual'::character varying, 'lot'::character varying])::text[]))),
     CONSTRAINT publicaciones_moneda_mxn_chk CHECK ((moneda = 'MXN'::bpchar)),
     CONSTRAINT publicaciones_tipo_precio_check CHECK (((tipo_precio)::text = ANY ((ARRAY['fixed'::character varying, 'per_unit'::character varying, 'per_kg'::character varying, 'per_animal'::character varying, 'per_lot'::character varying, 'quote'::character varying])::text[])))
@@ -1045,13 +1045,13 @@ CREATE TABLE public.reportes (
     reportable_id bigint NOT NULL,
     motivo character varying(255) NOT NULL,
     descripcion character varying(500),
-    estatus character varying(255) DEFAULT 'open'::character varying NOT NULL,
+    estatus character varying(255) DEFAULT 'abierto'::character varying NOT NULL,
     resuelto_por bigint,
     resuelto_en timestamp(0) without time zone,
     nota_resolucion character varying(500),
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
-    CONSTRAINT reportes_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['open'::character varying, 'investigating'::character varying, 'resolved'::character varying, 'dismissed'::character varying])::text[]))),
+    CONSTRAINT reportes_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['abierto'::character varying, 'investigating'::character varying, 'resuelto'::character varying, 'dismissed'::character varying])::text[]))),
     CONSTRAINT reportes_motivo_check CHECK (((motivo)::text = ANY ((ARRAY['fraude'::character varying, 'informacion_falsa'::character varying, 'producto_inexistente'::character varying, 'documentacion_sospechosa'::character varying, 'publicacion_duplicada'::character varying, 'conducta_inapropiada'::character varying, 'producto_no_permitido'::character varying, 'otro'::character varying])::text[])))
 );
 
@@ -1178,7 +1178,7 @@ CREATE TABLE public.sessions (
 CREATE TABLE public.solicitudes_verificacion (
     id bigint NOT NULL,
     usuario_id bigint NOT NULL,
-    estatus character varying(20) DEFAULT 'pending'::character varying NOT NULL,
+    estatus character varying(20) DEFAULT 'pendiente'::character varying NOT NULL,
     nombre_negocio character varying(150),
     motivo_rechazo text,
     revisado_por bigint,
@@ -2327,7 +2327,7 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 -- Name: solicitudes_verificacion_una_pendiente; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX solicitudes_verificacion_una_pendiente ON public.solicitudes_verificacion USING btree (usuario_id) WHERE ((estatus)::text = 'pending'::text);
+CREATE UNIQUE INDEX solicitudes_verificacion_una_pendiente ON public.solicitudes_verificacion USING btree (usuario_id) WHERE ((estatus)::text = 'pendiente'::text);
 
 
 --
@@ -2801,5 +2801,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict a8zrelBNh7HV5blmOBM9jeMcjlc1zvfOHxOyyFD3sBiSPU4dZh5UQAxKdSYEG2Q
+\unrestrict KPvyRcHfpwnndWuwyZrZzaSgDL0WVNJhrLbaoIHczy2uQUC0b7EhjWY1gZic3ME
 
