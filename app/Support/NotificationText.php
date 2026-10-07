@@ -21,6 +21,7 @@ class NotificationText
             'offer_accepted' => ['Oferta aceptada', "$actor aceptó tu oferta por «{$title}»".(isset($d['operation_id']) ? ". Operación #{$d['operation_id']}." : '.')],
             'offer_rejected' => ['Oferta rechazada', "$actor rechazó tu oferta por «{$title}»."],
             'offer_cancelled' => ['Oferta cancelada', "$actor canceló su oferta por «{$title}»."],
+            'listing_approved' => ['Publicación aprobada', "«{$title}» ya es visible para todos."],
             'listing_rejected' => ['Publicación rechazada', "Moderación rechazó «{$title}». Motivo: ".($d['reason'] ?? 'sin especificar')],
             'listing_suspended' => ['Publicación suspendida', "«{$title}» fue suspendida tras un reporte.".(! empty($d['reason']) ? " Nota: {$d['reason']}" : '')],
             'verification_approved' => ['Vendedor verificado', 'Revisamos tu documentación: ya eres vendedor verificado.'],

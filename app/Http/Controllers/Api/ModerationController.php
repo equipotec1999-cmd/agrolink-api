@@ -76,8 +76,12 @@ class ModerationController extends Controller
                 'vence_en' => now()->addDays($listing->productType->dias_vigencia_predeterminados),
             ];
         }
+        $wasInReview = $listing->estatus === 'en_revision';
         $listing->update($update);
         $this->audit($request, 'listing.approved', 'listing', $listing->id, ['antes' => $before]);
+        if ($wasInReview) {
+            NotificationService::listingModerated('listing_approved', $listing, null);
+        }
 
         return response()->noContent();
     }
@@ -101,7 +105,7 @@ class ModerationController extends Controller
     {
         $reports = Report::query()
             ->with('reporter:id,nombre')
-            ->where('reportable_tipo', 'listing')
+            ->whereIn('reportable_tipo', ['listing', 'user'])
             ->whereIn('estatus', ['abierto', 'investigating'])
             ->orderBy('id')
             ->limit(50)
@@ -109,12 +113,17 @@ class ModerationController extends Controller
 
         $listings = Listing::withTrashed()
             ->with('user:id,nombre')
-            ->whereIn('id', $reports->pluck('reportable_id'))
+            ->whereIn('id', $reports->where('reportable_tipo', 'listing')->pluck('reportable_id'))
             ->get()
             ->keyBy('id');
+        $users = \App\Models\User::query()
+            ->whereIn('id', $reports->where('reportable_tipo', 'user')->pluck('reportable_id'))
+            ->get(['id', 'nombre', 'apellidos'])
+            ->keyBy('id');
 
-        return response()->json(['data' => $reports->map(function (Report $r) use ($listings) {
-            $l = $listings->get($r->reportable_id);
+        return response()->json(['data' => $reports->map(function (Report $r) use ($listings, $users) {
+            $l = $r->reportable_tipo === 'listing' ? $listings->get($r->reportable_id) : null;
+            $u = $r->reportable_tipo === 'user' ? $users->get($r->reportable_id) : null;
 
             return [
                 'id' => $r->id,
@@ -123,6 +132,8 @@ class ModerationController extends Controller
                 'status' => $r->estatus,
                 'reporter_name' => $r->reporter?->nombre,
                 'created_at' => $r->creado_en,
+                'target_type' => $r->reportable_tipo,
+                'user' => $u ? ['id' => $u->id, 'name' => trim($u->nombre.' '.$u->apellidos)] : null,
                 'listing' => $l ? [
                     'id' => $l->id,
                     'title' => $l->titulo,

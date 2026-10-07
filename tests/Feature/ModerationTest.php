@@ -139,4 +139,18 @@ class ModerationTest extends ApiTestCase
 
         $this->assertSame('publicada', $listing->fresh()->estatus);
     }
+
+    public function test_reportar_usuario_llega_a_la_cola_y_no_se_duplica(): void
+    {
+        $reportado = $this->makeUser('vendedor');
+        $quien = $this->makeUser('comprador');
+
+        $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude'])->assertCreated();
+        $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude'])->assertUnprocessable();
+        $this->as($reportado)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'otro'])->assertUnprocessable();
+
+        $rows = $this->as($this->makeUser('moderador'))->getJson('/api/moderation/reports')->assertOk()->json('data');
+        $this->assertSame('user', $rows[0]['target_type']);
+        $this->assertSame($reportado->id, $rows[0]['user']['id']);
+    }
 }

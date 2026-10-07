@@ -99,6 +99,7 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
 
     // Moderación (Fase 6). Reportar: cualquier usuario con sesión.
     Route::post('/listings/{listing}/report', [ReportController::class, 'store'])->middleware('throttle:10,1');
+    Route::post('/users/{user}/report', [ReportController::class, 'storeUser'])->middleware('throttle:10,1');
 
     // Verificación de vendedor (quien la pide).
     Route::get('/verification', [VerificationController::class, 'show']);

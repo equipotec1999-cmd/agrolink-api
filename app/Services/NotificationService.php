@@ -102,7 +102,7 @@ class NotificationService
         ]);
     }
 
-    /** Aviso al dueño de una publicación: listing_rejected | listing_suspended. */
+    /** Aviso al dueño de una publicación: listing_approved | listing_rejected | listing_suspended. */
     public static function listingModerated(string $type, Listing $listing, ?string $reason): void
     {
         self::put($listing->usuario_id, $type, [

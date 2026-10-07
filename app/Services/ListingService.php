@@ -78,17 +78,14 @@ class ListingService
     }
 
     /**
-     * Publica el listing: status -> published (se ve ya, Fase 1 §5 "publicar primero,
-     * aprobar después"). moderation_status NO se toca aquí; sigue 'pendiente' hasta que
-     * moderación lo revise (Fase 6). expires_at usa el default del tipo de producto.
+     * Envía el listing a revisión (estatus 'en_revision'): no es visible hasta que un
+     * moderador lo apruebe (ModerationController::approve la publica y fija la vigencia).
      */
     public function publish(Listing $listing): Listing
     {
-        $listing->update([
-            'estatus' => 'publicada',
-            'publicado_en' => now(),
-            'vence_en' => now()->addDays($listing->productType->dias_vigencia_predeterminados),
-        ]);
+        // Moderación previa: queda oculta ('en_revision') hasta que un moderador la apruebe.
+        // La fecha de publicación y la vigencia se fijan al aprobarla.
+        $listing->update(['estatus' => 'en_revision', 'estatus_moderacion' => 'pendiente']);
 
         return $listing;
     }

@@ -97,9 +97,16 @@ class ListingTest extends ApiTestCase
 
         $borrador = $this->postJson('/api/listings', $this->payload(['title' => 'Borrador oculto']))->json('data.id');
         $publicada = $this->postJson('/api/listings', $this->payload(['title' => 'Publicada visible']))->json('data.id');
-        $this->postJson("/api/listings/$publicada/publish")->assertOk()->assertJsonPath('data.status', 'publicada');
+        $this->postJson("/api/listings/$publicada/publish")->assertOk()->assertJsonPath('data.status', 'en_revision');
 
+        // En revisión todavía no es visible; al aprobarla un moderador sí.
         $ids = collect($this->getJson('/api/listings')->assertOk()->json('data'))->pluck('id');
+        $this->assertFalse($ids->contains($publicada));
+
+        $mod = $this->makeUser('moderador');
+        $this->as($mod)->postJson("/api/moderation/listings/$publicada/approve")->assertNoContent();
+
+        $ids = collect($this->as($user)->getJson('/api/listings')->assertOk()->json('data'))->pluck('id');
         $this->assertTrue($ids->contains($publicada));
         $this->assertFalse($ids->contains($borrador));
     }
