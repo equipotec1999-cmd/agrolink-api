@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\OfferController;
+use App\Http\Controllers\Api\OperationController;
 use Illuminate\Support\Facades\Route;
 
 // Auth (Fase 1 §21: rate limiting en login/registro contra fuerza bruta).
@@ -53,4 +54,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/offers/{offer}/accept', [OfferController::class, 'accept']);
     Route::post('/offers/{offer}/reject', [OfferController::class, 'reject']);
     Route::post('/offers/{offer}/cancel', [OfferController::class, 'cancel']);
+
+    // Operaciones (Fase 5, bloque 3): lectura. Los cambios de estado llegan con pagos/entrega.
+    Route::get('/operations', [OperationController::class, 'index']);
+    Route::get('/operations/{operation}', [OperationController::class, 'show']);
 });
