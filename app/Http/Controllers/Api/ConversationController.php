@@ -22,7 +22,8 @@ class ConversationController extends Controller
     private function withRelations()
     {
         return Conversation::query()->with([
-            'listing:id,titulo,estatus,precio,tipo_precio,tipo_producto_id',
+            // withTrashed: una publicación eliminada no debe romper la bandeja de mensajes.
+            'listing' => fn ($q) => $q->withTrashed()->select(['id', 'titulo', 'estatus', 'precio', 'tipo_precio', 'tipo_producto_id']),
             'listing.media',
             'buyer:id,nombre',
             'seller:id,nombre',

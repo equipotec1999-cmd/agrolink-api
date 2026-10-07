@@ -18,19 +18,19 @@ class ConversationResource extends JsonResource
         return [
             'id' => $this->id,
             'listing' => [
-                'id' => $this->listing->id,
-                'title' => $this->listing->titulo,
-                'status' => $this->listing->estatus,
-                'price' => $this->listing->precio,
-                'price_type' => $this->listing->tipo_precio,
-                'product_type_id' => $this->listing->tipo_producto_id,
+                'id' => $this->listing?->id,
+                'title' => $this->listing?->titulo,
+                'status' => $this->listing?->estatus,
+                'price' => $this->listing?->precio,
+                'price_type' => $this->listing?->tipo_precio,
+                'product_type_id' => $this->listing?->tipo_producto_id,
                 'cover_url' => $cover
                     ? Storage::disk(config('filesystems.default'))->url($cover->ruta_almacenamiento)
                     : null,
             ],
             'other_user' => [
-                'id' => $other->id,
-                'name' => $other->nombre,
+                'id' => $other?->id,
+                'name' => $other?->nombre ?? 'Usuario',
             ],
             'my_role' => $this->comprador_id === $me ? 'buyer' : 'seller',
             'last_message' => $last ? [
