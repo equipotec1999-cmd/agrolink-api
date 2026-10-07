@@ -1,0 +1,65 @@
+name: Esquema de BD
+
+# Genera docs/schema.sql (esquema completo real) migrando una BD limpia con PostGIS.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['database/migrations/**']
+
+permissions:
+  contents: write
+
+jobs:
+  schema:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: agrolink
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: agrolink
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo, pdo_pgsql, pgsql, bcmath, intl
+          coverage: none
+      - run: composer install --prefer-dist --no-interaction --no-progress
+      - run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate --force
+          php artisan db:seed --class=RolesAndPermissionsSeeder --force
+          php artisan db:seed --class=CatalogSeeder --force
+      - name: Volcar esquema y catálogo
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16 >/dev/null
+          export PGPASSWORD=postgres
+          pg_dump -h 127.0.0.1 -U postgres -d agrolink --schema-only --no-owner --no-privileges \
+            --exclude-schema=tiger --exclude-schema=tiger_data --exclude-schema=topology \
+            > docs/schema.sql
+          # Datos semilla (roles, permisos y catálogo) para poder montar una BD funcional.
+          pg_dump -h 127.0.0.1 -U postgres -d agrolink --data-only --no-owner --no-privileges --inserts \
+            --table='roles' --table='permissions' --table='role_has_permissions' \
+            --table='categorias' --table='tipos_producto' --table='atributos' \
+            --table='opciones_atributo' --table='tipo_producto_atributos' \
+            > docs/semillas.sql || true
+          wc -l docs/schema.sql docs/semillas.sql
+      - name: Guardar en el repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/schema.sql docs/semillas.sql
+          git diff --cached --quiet || (git commit -m "docs: esquema de BD generado" && git push)
