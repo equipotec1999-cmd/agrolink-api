@@ -25,6 +25,13 @@ if [ -n "${ADMIN_EMAIL:-}" ]; then
   fi
 fi
 
+# Moderadores (solo moderan): MODERATOR_EMAILS="uno@correo.com,otro@correo.com". Idempotente.
+if [ -n "${MODERATOR_EMAILS:-}" ]; then
+  for m in $(echo "$MODERATOR_EMAILS" | tr ',' ' '); do
+    php artisan agrolink:crear-admin "$m" --rol=moderador --nombre="Moderador" || true
+  done
+fi
+
 # Revisión previa a producción en los logs (no detiene el arranque).
 php artisan agrolink:preflight || true
 

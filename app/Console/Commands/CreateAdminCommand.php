@@ -40,7 +40,8 @@ class CreateAdminCommand extends Command
             ]);
         }
 
-        $user->assignRole($rol);
+        // Moderador es solo moderador: se reemplazan otros roles. Administrador se suma.
+        $rol === 'moderador' ? $user->syncRoles([$rol]) : $user->assignRole($rol);
 
         $this->info("Cuenta {$correo} con rol {$rol}.");
         if ($password) {

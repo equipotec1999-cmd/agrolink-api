@@ -37,6 +37,7 @@ services:
       - { key: AWS_USE_PATH_STYLE_ENDPOINT, value: "true" }
       # Opcionales, solo para el primer arranque (bórralas después):
       - { key: ADMIN_EMAIL, sync: false }
+      - { key: MODERATOR_EMAILS, sync: false }
       - { key: ADMIN_NAME, sync: false }
       - { key: ADMIN_PASSWORD, sync: false }
       # Confirmación de cuenta por correo (Resend). Valores en el dashboard.
