@@ -23,6 +23,8 @@ class NotificationText
             'offer_cancelled' => ['Oferta cancelada', "$actor canceló su oferta por «{$title}»."],
             'listing_rejected' => ['Publicación rechazada', "Moderación rechazó «{$title}». Motivo: ".($d['reason'] ?? 'sin especificar')],
             'listing_suspended' => ['Publicación suspendida', "«{$title}» fue suspendida tras un reporte.".(! empty($d['reason']) ? " Nota: {$d['reason']}" : '')],
+            'verification_approved' => ['Vendedor verificado', 'Revisamos tu documentación: ya eres vendedor verificado.'],
+            'verification_rejected' => ['Verificación rechazada', 'No pudimos verificar tu cuenta. Motivo: '.($d['reason'] ?? 'sin especificar')],
             default => ['Notificación', ''],
         };
     }

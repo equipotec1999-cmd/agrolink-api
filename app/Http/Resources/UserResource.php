@@ -35,6 +35,8 @@ class UserResource extends JsonResource
             // Cuenta administrativa: la verificación es obligatoria (y no se puede desactivar).
             'two_factor_required' => $this->needsTwoFactor(),
             'can_manage_rules' => $this->can('manage compliance rules'),
+            'seller_verified' => (bool) $this->sellerProfile?->verificado,
+            'can_review_documents' => $this->can('moderate documents'),
             'can_moderate' => $this->can('moderate listings') || $this->can('resolve reports'),
             'created_at' => $this->creado_en,
         ];

@@ -111,4 +111,10 @@ class NotificationService
             'reason' => $reason,
         ]);
     }
+
+    /** Aviso al solicitante: verification_approved | verification_rejected. */
+    public static function verificationReviewed(string $type, int $userId, ?string $reason): void
+    {
+        self::put($userId, $type, ['reason' => $reason]);
+    }
 }

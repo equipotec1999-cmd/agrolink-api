@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\OfferController;
 use App\Http\Controllers\Api\OperationController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\Api\VerificationController;
+use App\Http\Controllers\Api\VerificationReviewController;
 use Illuminate\Support\Facades\Route;
 
 // Auth (Fase 1 §21: rate limiting en login/registro contra fuerza bruta).
@@ -94,12 +96,22 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     // Moderación (Fase 6). Reportar: cualquier usuario con sesión.
     Route::post('/listings/{listing}/report', [ReportController::class, 'store'])->middleware('throttle:10,1');
 
+    // Verificación de vendedor (quien la pide).
+    Route::get('/verification', [VerificationController::class, 'show']);
+    Route::post('/verification', [VerificationController::class, 'store'])->middleware('throttle:5,60');
+
     // Solo con permiso (no por nombre de rol).
     Route::prefix('moderation')->middleware('two-factor')->group(function () {
         Route::middleware('can:moderate listings')->group(function () {
             Route::get('/listings', [ModerationController::class, 'listings']);
             Route::post('/listings/{listing}/approve', [ModerationController::class, 'approve']);
             Route::post('/listings/{listing}/reject', [ModerationController::class, 'reject']);
+        });
+        Route::middleware('can:moderate documents')->group(function () {
+            Route::get('/verifications', [VerificationReviewController::class, 'index']);
+            Route::get('/verifications/{verification}/documents/{document}', [VerificationReviewController::class, 'document']);
+            Route::post('/verifications/{verification}/approve', [VerificationReviewController::class, 'approve']);
+            Route::post('/verifications/{verification}/reject', [VerificationReviewController::class, 'reject']);
         });
         Route::middleware('can:resolve reports')->group(function () {
             Route::get('/reports', [ModerationController::class, 'reports']);
