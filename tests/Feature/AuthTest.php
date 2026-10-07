@@ -95,4 +95,26 @@ class AuthTest extends ApiTestCase
 
         $this->assertDatabaseHas('usuarios', ['id' => $user->id, 'nombre' => 'Nombre Nuevo', 'telefono' => '9861234567']);
     }
+
+    public function test_estadisticas_del_perfil_son_reales(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $this->makeListing($seller);
+        $this->makeListing($seller, ['estatus' => 'draft']);
+
+        $this->as($seller)->getJson('/api/me/stats')->assertOk()
+            ->assertJsonPath('data.listings', 1)
+            ->assertJsonPath('data.sales', 0)
+            ->assertJsonPath('data.purchases', 0)
+            ->assertJsonPath('data.rating', null);
+
+        $listing = $this->makeListing($seller);
+        $id = $this->as($buyer)->postJson("/api/listings/{$listing->id}/conversation")->json('data.id');
+        $this->postJson("/api/conversations/$id/offers", ['amount' => 100, 'quantity' => 1])->assertCreated();
+        $this->as($seller)->postJson('/api/offers/'.\App\Models\Offer::firstOrFail()->id.'/accept')->assertOk();
+
+        $this->getJson('/api/me/stats')->assertJsonPath('data.sales', 1)->assertJsonPath('data.listings', 2);
+        $this->as($buyer)->getJson('/api/me/stats')->assertJsonPath('data.purchases', 1)->assertJsonPath('data.sales', 0);
+    }
 }

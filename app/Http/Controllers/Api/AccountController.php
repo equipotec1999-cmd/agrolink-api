@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\Listing;
+use App\Models\Operation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -44,5 +46,25 @@ class AccountController extends Controller
         $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
 
         return response()->json(['message' => 'Contraseña actualizada.']);
+    }
+
+    /** Cifras reales del perfil: publicaciones activas, ventas, compras y reputación. */
+    public function stats(Request $request)
+    {
+        $user = $request->user();
+        $profile = $user->sellerProfile;
+
+        // Reputación = promedio de las tres calificaciones; sin operaciones completadas no hay dato.
+        $rating = null;
+        if ($profile && (int) $profile->operaciones_completadas > 0) {
+            $rating = round(((float) $profile->calificacion_exactitud + (float) $profile->calificacion_cumplimiento + (float) $profile->calificacion_comunicacion) / 3, 1);
+        }
+
+        return response()->json(['data' => [
+            'listings' => Listing::where('usuario_id', $user->id)->where('estatus', 'published')->count(),
+            'sales' => Operation::where('vendedor_id', $user->id)->where('estatus', '!=', 'cancelado')->count(),
+            'purchases' => Operation::where('comprador_id', $user->id)->where('estatus', '!=', 'cancelado')->count(),
+            'rating' => $rating,
+        ]]);
     }
 }
