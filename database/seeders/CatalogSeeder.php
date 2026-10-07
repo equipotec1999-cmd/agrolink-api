@@ -59,7 +59,7 @@ class CatalogSeeder extends Seeder
             'fecha_cosecha' => ['Fecha de cosecha', 'date', null, 'general', true, false, null],
             'calidad' => ['Calidad', 'select', null, 'general', true, true, ['Primera', 'Segunda', 'Tercera']],
             'madurez' => ['Madurez', 'select', null, 'general', false, false, ['Verde', 'Pintón', 'Maduro']],
-            'presentacion_cosecha' => ['Presentación', 'select', null, 'comercial', false, false, ['Granel', 'Caja', 'Arpilla', 'Tonelada']],
+            'presentacion_cosecha' => ['Presentación', 'select', null, 'comercial', false, false, ['Granel', 'Caja', 'Arpilla', 'Saco (1 ton)']],
             'pedido_minimo' => ['Pedido mínimo', 'number', 'kg', 'comercial', false, false, null],
         ];
 
