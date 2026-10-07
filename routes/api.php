@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ComplianceRuleController;
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\SavedSearchController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
@@ -46,6 +47,11 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/listings/{listing}/archive', [ListingController::class, 'archive']);
     Route::post('/listings/{listing}/media', [ListingController::class, 'uploadMedia']);
     Route::delete('/listings/{listing}/media/{media}', [ListingController::class, 'destroyMedia']);
+
+    // Búsquedas guardadas.
+    Route::get('/saved-searches', [SavedSearchController::class, 'index']);
+    Route::post('/saved-searches', [SavedSearchController::class, 'store']);
+    Route::delete('/saved-searches/{search}', [SavedSearchController::class, 'destroy']);
 
     // Favoritos (Fase 4). PUT/DELETE son idempotentes a propósito: la app los
     // reintenta sin riesgo si la red falla a medias.
