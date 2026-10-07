@@ -39,3 +39,9 @@ services:
       - { key: ADMIN_EMAIL, sync: false }
       - { key: ADMIN_NAME, sync: false }
       - { key: ADMIN_PASSWORD, sync: false }
+      # Confirmación de cuenta por correo (Resend) y SMS (Twilio). Valores en el dashboard.
+      - { key: RESEND_KEY, sync: false }
+      - { key: RESEND_FROM, sync: false }
+      - { key: TWILIO_SID, sync: false }
+      - { key: TWILIO_TOKEN, sync: false }
+      - { key: TWILIO_FROM, sync: false }

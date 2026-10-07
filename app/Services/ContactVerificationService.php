@@ -83,16 +83,36 @@ class ContactVerificationService
 
     private function sendByEmail(string $to, string $code): void
     {
+        $text = "Tu código de confirmación de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.";
+
+        // Preferido: API de Resend (más confiable que SMTP desde Render).
+        $key = config('services.resend.key');
+        if ($key) {
+            try {
+                Http::withToken($key)
+                    ->timeout(10)
+                    ->post('https://api.resend.com/emails', [
+                        'from' => config('services.resend.from'),
+                        'to' => [$to],
+                        'subject' => 'Confirma tu cuenta — AgroLink',
+                        'text' => $text,
+                    ])
+                    ->throw();
+
+                return;
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo enviar correo por Resend', ['error' => $e->getMessage()]);
+            }
+        }
+
+        // Respaldo: el mailer configurado en MAIL_* (por defecto "log").
         try {
-            Mail::raw(
-                "Tu código de confirmación de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.",
-                function ($msg) use ($to) {
-                    $msg->to($to)->subject('Confirma tu cuenta — AgroLink');
-                }
-            );
+            Mail::raw($text, fn ($msg) => $msg->to($to)->subject('Confirma tu cuenta — AgroLink'));
         } catch (\Throwable $e) {
             Log::warning('No se pudo enviar correo de verificación', ['error' => $e->getMessage()]);
-            // Fallback de desarrollo: deja el código en los logs para que el equipo lo lea.
+        }
+        // Sin proveedor real (modo desarrollo): deja el código en los logs.
+        if (! $key) {
             Log::info("Código de verificación (email) para {$to}: {$code}");
         }
     }
