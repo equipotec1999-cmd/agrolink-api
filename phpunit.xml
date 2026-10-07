@@ -22,8 +22,15 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- Las pruebas usan SIEMPRE una base propia (RefreshDatabase la borra y recrea):
+             nunca la de desarrollo ni la de producción. TestCase se niega a correr si el
+             nombre no termina en _test. Host/usuario/clave se pueden cambiar por variables de entorno. -->
+        <env name="DB_CONNECTION" value="pgsql" force="true"/>
+        <env name="DB_URL" value="" force="true"/>
+        <env name="DB_DATABASE" value="agrolink_test" force="true"/>
+        <env name="DB_SEARCH_PATH" value="public" force="true"/>
+        <env name="DB_SSLMODE" value="prefer" force="true"/>
+        <env name="FIREBASE_CREDENTIALS_BASE64" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
