@@ -41,7 +41,7 @@ antes de lanzar y después de cada cambio de configuración.
 - [ ] `APP_DEBUG=false`, `APP_ENV=production`, `LOG_LEVEL=warning`
 - [ ] Plan de Render **de pago** (el gratuito se duerme y la primera petición tarda ~1 min; los avisos push llegan tarde)
 - [ ] Supabase: copias de seguridad activas (plan Pro: respaldos diarios) y RLS no necesaria (solo la API accede)
-- [ ] Credenciales de Firebase (push) cargadas como variable `FIREBASE_CREDENTIALS` en Render
+- [ ] Credenciales de Firebase (push) cargadas como variable `FIREBASE_CREDENTIALS_BASE64` en Render
 - [ ] Al menos un administrador con 2FA y un moderador
 - [ ] Catálogo y reglas de cumplimiento revisados (Reglas de cumplimiento en la app)
 - [ ] Aviso de privacidad y términos publicados (se manejan INE y ubicación)

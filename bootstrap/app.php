@@ -32,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Cabeceras de seguridad en todas las respuestas + tope general de peticiones por minuto
         // (los endpoints sensibles ya tienen su propio límite más estricto).
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
-        $middleware->api(append: ['throttle:120,1']);
+        $middleware->api(append: ['throttle:general']);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

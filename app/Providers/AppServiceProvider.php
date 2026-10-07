@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -31,5 +34,8 @@ class AppServiceProvider extends ServiceProvider
         Route::pattern('verification', '[0-9]+');
         Route::pattern('document', '[0-9]+');
         Route::pattern('search', '[0-9]+');
+
+        // Tope general de la API (contador propio, separado de los límites estrictos de cada ruta).
+        RateLimiter::for('general', fn (Request $r) => Limit::perMinute(120)->by('general|'.($r->user()?->getAuthIdentifier() ?? $r->ip())));
     }
 }
