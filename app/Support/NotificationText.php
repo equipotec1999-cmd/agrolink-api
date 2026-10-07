@@ -16,13 +16,13 @@ class NotificationText
 
         return match ($type) {
             'new_message' => ["Mensaje de $actor", $d['preview'] ?? ''],
-            'offer_received' => ["Nueva oferta de $actor", "$offer por «$title»"],
-            'offer_countered' => ["Contraoferta de $actor", "$offer por «$title»"],
-            'offer_accepted' => ['Oferta aceptada', "$actor aceptó tu oferta por «$title»".(isset($d['operation_id']) ? ". Operación #{$d['operation_id']}." : '.')],
-            'offer_rejected' => ['Oferta rechazada', "$actor rechazó tu oferta por «$title»."],
-            'offer_cancelled' => ['Oferta cancelada', "$actor canceló su oferta por «$title»."],
-            'listing_rejected' => ['Publicación rechazada', "Moderación rechazó «$title». Motivo: ".($d['reason'] ?? 'sin especificar')],
-            'listing_suspended' => ['Publicación suspendida', "«$title» fue suspendida tras un reporte.".(! empty($d['reason']) ? " Nota: {$d['reason']}" : '')],
+            'offer_received' => ["Nueva oferta de $actor", "$offer por «{$title}»"],
+            'offer_countered' => ["Contraoferta de $actor", "$offer por «{$title}»"],
+            'offer_accepted' => ['Oferta aceptada', "$actor aceptó tu oferta por «{$title}»".(isset($d['operation_id']) ? ". Operación #{$d['operation_id']}." : '.')],
+            'offer_rejected' => ['Oferta rechazada', "$actor rechazó tu oferta por «{$title}»."],
+            'offer_cancelled' => ['Oferta cancelada', "$actor canceló su oferta por «{$title}»."],
+            'listing_rejected' => ['Publicación rechazada', "Moderación rechazó «{$title}». Motivo: ".($d['reason'] ?? 'sin especificar')],
+            'listing_suspended' => ['Publicación suspendida', "«{$title}» fue suspendida tras un reporte.".(! empty($d['reason']) ? " Nota: {$d['reason']}" : '')],
             default => ['Notificación', ''],
         };
     }

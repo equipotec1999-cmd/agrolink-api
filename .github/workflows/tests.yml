@@ -59,7 +59,7 @@ jobs:
           cat phpunit-out.txt
           if [ $code -ne 0 ]; then
             # Resumen de fallos como anotación (se puede leer sin descargar los logs).
-            msg=$(grep -vE '^\s*$' phpunit-out.txt | grep -vE '^(PHPUnit|Runtime|Configuration|Random)' | tail -c 9500 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            msg=$(grep -vE '^\s*$' phpunit-out.txt | grep -vE '^(PHPUnit|Runtime|Configuration|Random)' | tail -c 30000 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
             echo "::error title=PHPUnit fallo::$msg"
           fi
           exit $code

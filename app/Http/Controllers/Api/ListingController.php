@@ -97,7 +97,7 @@ class ListingController extends Controller
     {
         $listing = $this->listings->create($request->user(), $request->validated());
 
-        return new ListingResource($listing);
+        return (new ListingResource($listing))->response()->setStatusCode(201);
     }
 
     public function show(Listing $listing)

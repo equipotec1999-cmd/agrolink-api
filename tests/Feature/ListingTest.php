@@ -117,7 +117,7 @@ class ListingTest extends ApiTestCase
             ->assertOk()->assertJsonPath('data.title', 'Nuevo título');
         $this->postJson("/api/listings/$id/archive")->assertOk()->assertJsonPath('data.status', 'archived');
         $this->deleteJson("/api/listings/$id")->assertOk();
-        $this->assertSoftDeleted('publicaciones', ['id' => $id]);
+        $this->assertSoftDeleted('publicaciones', ['id' => $id], null, 'eliminado_en');
     }
 
     public function test_mis_publicaciones_solo_trae_las_mias(): void
