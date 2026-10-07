@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AccountController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ComplianceRuleController;
@@ -23,6 +24,8 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,
 Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::patch('/me', [AccountController::class, 'update']);
+    Route::post('/me/password', [AccountController::class, 'password'])->middleware('throttle:6,1');
 });
 
 // Verificación en dos pasos, paso 2 del login: SOLO acepta el token pendiente.
