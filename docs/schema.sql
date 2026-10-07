@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict KPvyRcHfpwnndWuwyZrZzaSgDL0WVNJhrLbaoIHczy2uQUC0b7EhjWY1gZic3ME
+\restrict lfnUbAuQTfYHAU0jt8dlmPZVSdESuAvAeFmOk0zaY4YuflUg12uL3aNneYcMRHu
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -1350,7 +1350,8 @@ CREATE TABLE public.usuarios (
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
     eliminado_en timestamp(0) without time zone,
-    dos_factores_ultimo_paso bigint
+    dos_factores_ultimo_paso bigint,
+    apellidos character varying(150)
 );
 
 
@@ -2801,5 +2802,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict KPvyRcHfpwnndWuwyZrZzaSgDL0WVNJhrLbaoIHczy2uQUC0b7EhjWY1gZic3ME
+\unrestrict lfnUbAuQTfYHAU0jt8dlmPZVSdESuAvAeFmOk0zaY4YuflUg12uL3aNneYcMRHu
 
