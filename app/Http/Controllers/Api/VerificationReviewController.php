@@ -55,7 +55,7 @@ class VerificationReviewController extends Controller
         abort_unless($document->solicitud_id === $verification->id, 404);
         $this->audit($request, 'verification.document_viewed', $verification, ['documento' => $document->tipo]);
 
-        return Storage::disk(config('filesystems.default'))->response(
+        return Storage::disk($document->disco ?: config('filesystems.default'))->response(
             $document->ruta_almacenamiento,
             null,
             ['Cache-Control' => 'private, no-store', 'Content-Type' => $document->tipo_mime]

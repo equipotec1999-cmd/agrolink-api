@@ -8,7 +8,7 @@ class VerificationDocument extends Modelo
 {
     protected $table = 'documentos_verificacion';
 
-    protected $fillable = ['solicitud_id', 'tipo', 'ruta_almacenamiento', 'nombre_original', 'tipo_mime', 'tamano'];
+    protected $fillable = ['solicitud_id', 'tipo', 'ruta_almacenamiento', 'nombre_original', 'tipo_mime', 'tamano', 'disco'];
 
     public function request(): BelongsTo
     {

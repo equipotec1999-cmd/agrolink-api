@@ -31,6 +31,7 @@ services:
       - { key: AWS_SECRET_ACCESS_KEY, sync: false }
       - { key: AWS_DEFAULT_REGION, sync: false }
       - { key: AWS_BUCKET, value: listings }
+      - { key: VERIFICATION_BUCKET, sync: false }   # bucket PRIVADO para INE/comprobantes
       - { key: AWS_ENDPOINT, sync: false }
       - { key: AWS_URL, sync: false }
       - { key: AWS_USE_PATH_STYLE_ENDPOINT, value: "true" }

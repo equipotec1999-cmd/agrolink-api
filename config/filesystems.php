@@ -62,7 +62,26 @@ return [
             'report' => false,
         ],
 
+        // Bucket PRIVADO solo para documentos de verificación (INE, comprobantes).
+        // Mismas llaves de S3, otro bucket; no debe tener lectura pública.
+        'verificaciones' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('VERIFICATION_BUCKET'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => true,
+            'report' => false,
+        ],
+
     ],
+
+    // Disco de los documentos de verificación: el bucket privado si está configurado;
+    // si no, el disco por defecto (desarrollo y pruebas).
+    'verification_disk' => env('VERIFICATION_BUCKET') ? 'verificaciones' : env('FILESYSTEM_DISK', 'local'),
 
     /*
     |--------------------------------------------------------------------------

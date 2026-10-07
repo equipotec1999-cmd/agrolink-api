@@ -59,7 +59,7 @@ class VerificationController extends Controller
             'Ya tienes una solicitud en revisión.'
         );
 
-        $disk = config('filesystems.default');
+        $disk = config('filesystems.verification_disk');
         $stored = [];
 
         try {
@@ -90,6 +90,7 @@ class VerificationController extends Controller
                         'nombre_original' => Str::limit($file->getClientOriginalName(), 200, ''),
                         'tipo_mime' => (string) $file->getMimeType(),
                         'tamano' => (int) $file->getSize(),
+                        'disco' => $disk,
                     ]);
                 }
 
