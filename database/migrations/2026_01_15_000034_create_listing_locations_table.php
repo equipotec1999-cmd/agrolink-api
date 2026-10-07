@@ -9,25 +9,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('listing_locations', function (Blueprint $table) {
+        Schema::create('ubicaciones_publicacion', function (Blueprint $table) {
             // listing_id es la PK: relación 1 a 1 con la publicación.
-            $table->foreignId('listing_id')->primary()->constrained()->cascadeOnDelete();
-            $table->foreignId('property_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('state', 100);
-            $table->string('municipality', 100);
-            $table->string('postal_code', 10)->nullable();
+            $table->foreignId('publicacion_id')->primary()->constrained('publicaciones')->cascadeOnDelete();
+            $table->foreignId('predio_id')->nullable()->constrained('predios')->nullOnDelete();
+            $table->string('estado', 100);
+            $table->string('municipio', 100);
+            $table->string('codigo_postal', 10)->nullable();
             // Exacto: nunca se expone por la API pública (Fase 1 §6).
-            $table->geography('exact_location', 'point', 4326);
+            $table->geography('ubicacion_exacta', 'point', 4326);
             // Aproximado: desplazado ~2 km al copiarlo desde properties; es lo único público.
-            $table->geography('approx_location', 'point', 4326);
-            $table->timestamps();
+            $table->geography('ubicacion_aproximada', 'point', 4326);
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
         });
 
-        DB::statement('CREATE INDEX listing_locations_approx_gix ON listing_locations USING GIST(approx_location)');
+        DB::statement('CREATE INDEX ubicaciones_publicacion_aprox_gix ON ubicaciones_publicacion USING GIST(ubicacion_aproximada)');
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('listing_locations');
+        Schema::dropIfExists('ubicaciones_publicacion');
     }
 };

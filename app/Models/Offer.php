@@ -6,38 +6,40 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Offer extends Model
+class Offer extends Modelo
 {
+    protected $table = 'ofertas';
+
     protected $fillable = [
-        'conversation_id',
-        'sender_id',
-        'amount',
-        'quantity',
-        'status',
-        'expires_at',
+        'conversacion_id',
+        'remitente_id',
+        'monto',
+        'cantidad',
+        'estatus',
+        'vence_en',
     ];
 
     protected function casts(): array
     {
         return [
-            'amount' => 'decimal:2',
-            'quantity' => 'decimal:2',
-            'expires_at' => 'datetime',
+            'monto' => 'decimal:2',
+            'cantidad' => 'decimal:2',
+            'vence_en' => 'datetime',
         ];
     }
 
     public function conversation(): BelongsTo
     {
-        return $this->belongsTo(Conversation::class);
+        return $this->belongsTo(Conversation::class, 'conversacion_id');
     }
 
     public function sender(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'sender_id');
+        return $this->belongsTo(User::class, 'remitente_id');
     }
 
     public function operation(): HasOne
     {
-        return $this->hasOne(Operation::class);
+        return $this->hasOne(Operation::class, 'oferta_id');
     }
 }

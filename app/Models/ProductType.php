@@ -7,38 +7,40 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class ProductType extends Model
+class ProductType extends Modelo
 {
+    protected $table = 'tipos_producto';
+
     protected $fillable = [
-        'category_id',
-        'name',
+        'categoria_id',
+        'nombre',
         'slug',
-        'icon',
-        'default_expiry_days',
-        'sort_order',
-        'is_active',
+        'icono',
+        'dias_vigencia_predeterminados',
+        'orden',
+        'activo',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class, 'categoria_id');
     }
 
     public function listings(): HasMany
     {
-        return $this->hasMany(Listing::class);
+        return $this->hasMany(Listing::class, 'tipo_producto_id');
     }
 
     public function complianceRules(): HasMany
     {
-        return $this->hasMany(ComplianceRule::class);
+        return $this->hasMany(ComplianceRule::class, 'tipo_producto_id');
     }
 
     /**
@@ -48,9 +50,9 @@ class ProductType extends Model
      */
     public function attributes(): BelongsToMany
     {
-        return $this->belongsToMany(Attribute::class, 'product_type_attributes')
-            ->withPivot(['is_required', 'is_filterable', 'sort_order', 'min_value', 'max_value'])
-            ->withTimestamps()
-            ->orderByPivot('sort_order');
+        return $this->belongsToMany(Attribute::class, 'tipo_producto_atributos', 'tipo_producto_id', 'atributo_id')
+            ->withPivot(['es_obligatorio', 'es_filtrable', 'orden', 'valor_minimo', 'valor_maximo'])
+            ->withTimestamps('creado_en', 'actualizado_en')
+            ->orderByPivot('orden');
     }
 }

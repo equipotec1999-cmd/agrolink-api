@@ -11,10 +11,10 @@ class CategoryResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => $this->nombre,
             'slug' => $this->slug,
-            'color_key' => $this->color_key,
-            'icon' => $this->icon,
+            'color_key' => $this->clave_color,
+            'icon' => $this->icono,
             'product_types' => ProductTypeResource::collection($this->whenLoaded('productTypes')),
         ];
     }

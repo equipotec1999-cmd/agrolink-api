@@ -23,11 +23,11 @@ class CatalogController extends Controller
     {
         $categories = Cache::remember('catalog.categories', now()->addHour(), function () {
             return Category::query()
-                ->whereNull('parent_id')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
+                ->whereNull('categoria_padre_id')
+                ->where('activo', true)
+                ->orderBy('orden')
                 ->with([
-                    'productTypes' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order'),
+                    'productTypes' => fn ($q) => $q->where('activo', true)->orderBy('orden'),
                     'productTypes.attributes.options',
                 ])
                 ->get();

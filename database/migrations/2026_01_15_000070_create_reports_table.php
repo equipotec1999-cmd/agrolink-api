@@ -8,30 +8,31 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('reports', function (Blueprint $table) {
+        Schema::create('reportes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('reporter_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('reportante_id')->constrained('usuarios')->cascadeOnDelete();
             // Polimórfico simple: por ahora solo 'listing' y 'user', pero deja espacio a más.
-            $table->string('reportable_type', 60);
+            $table->string('reportable_tipo', 60);
             $table->unsignedBigInteger('reportable_id');
-            $table->enum('reason', [
+            $table->enum('motivo', [
                 'fraude', 'informacion_falsa', 'producto_inexistente', 'documentacion_sospechosa',
                 'publicacion_duplicada', 'conducta_inapropiada', 'producto_no_permitido', 'otro',
             ]);
-            $table->string('description', 500)->nullable();
-            $table->enum('status', ['open', 'investigating', 'resolved', 'dismissed'])->default('open');
-            $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamp('resolved_at')->nullable();
-            $table->string('resolution_note', 500)->nullable();
-            $table->timestamps();
+            $table->string('descripcion', 500)->nullable();
+            $table->enum('estatus', ['open', 'investigating', 'resolved', 'dismissed'])->default('open');
+            $table->foreignId('resuelto_por')->nullable()->constrained('usuarios')->nullOnDelete();
+            $table->timestamp('resuelto_en')->nullable();
+            $table->string('nota_resolucion', 500)->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index(['reportable_type', 'reportable_id']);
-            $table->index('status');
+            $table->index(['reportable_tipo', 'reportable_id']);
+            $table->index('estatus');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('reports');
+        Schema::dropIfExists('reportes');
     }
 };

@@ -11,28 +11,29 @@ return new class extends Migration
     {
         // Fincas/ranchos del usuario: guarda ubicaciones reutilizables para precargar
         // al publicar. Un usuario puede tener varias (confirmado 25/sep).
-        Schema::create('properties', function (Blueprint $table) {
+        Schema::create('predios', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->string('state', 100);
-            $table->string('municipality', 100);
-            $table->string('postal_code', 10)->nullable();
+            $table->foreignId('usuario_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->string('nombre');
+            $table->string('estado', 100);
+            $table->string('municipio', 100);
+            $table->string('codigo_postal', 10)->nullable();
             // Punto exacto: nunca se expone por la API pública (Fase 1 §6).
-            $table->geography('exact_location', 'point', 4326)->nullable();
+            $table->geography('ubicacion_exacta', 'point', 4326)->nullable();
             // Punto aproximado: el único que devuelve el Resource al público.
-            $table->geography('approx_location', 'point', 4326)->nullable();
-            $table->boolean('is_default')->default(false);
-            $table->timestamps();
+            $table->geography('ubicacion_aproximada', 'point', 4326)->nullable();
+            $table->boolean('es_predeterminado')->default(false);
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index('user_id');
+            $table->index('usuario_id');
         });
 
-        DB::statement('CREATE INDEX properties_exact_location_gix ON properties USING GIST(exact_location)');
+        DB::statement('CREATE INDEX predios_ubicacion_exacta_gix ON predios USING GIST(ubicacion_exacta)');
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('properties');
+        Schema::dropIfExists('predios');
     }
 };

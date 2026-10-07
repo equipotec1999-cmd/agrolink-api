@@ -9,18 +9,18 @@ return new class extends Migration
     public function up(): void
     {
         // "Guardar vendedores" (Fase 1 §10), separado de favoritos de publicaciones.
-        Schema::create('followed_sellers', function (Blueprint $table) {
+        Schema::create('vendedores_seguidos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('seller_id')->constrained('users')->cascadeOnDelete();
-            $table->timestamp('created_at')->nullable();
+            $table->foreignId('usuario_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->foreignId('vendedor_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->timestamp('creado_en')->nullable();
 
-            $table->unique(['user_id', 'seller_id']);
+            $table->unique(['usuario_id', 'vendedor_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('followed_sellers');
+        Schema::dropIfExists('vendedores_seguidos');
     }
 };

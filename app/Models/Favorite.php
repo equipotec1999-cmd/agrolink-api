@@ -5,22 +5,24 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Favorite extends Model
+class Favorite extends Modelo
 {
+    protected $table = 'favoritos';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'user_id',
-        'listing_id',
+        'usuario_id',
+        'publicacion_id',
     ];
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 
     public function listing(): BelongsTo
     {
-        return $this->belongsTo(Listing::class);
+        return $this->belongsTo(Listing::class, 'publicacion_id');
     }
 }

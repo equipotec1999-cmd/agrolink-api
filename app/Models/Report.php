@@ -6,39 +6,41 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
-class Report extends Model
+class Report extends Modelo
 {
+    protected $table = 'reportes';
+
     protected $fillable = [
-        'reporter_id',
-        'reportable_type',
+        'reportante_id',
+        'reportable_tipo',
         'reportable_id',
-        'reason',
-        'description',
-        'status',
-        'resolved_by',
-        'resolved_at',
-        'resolution_note',
+        'motivo',
+        'descripcion',
+        'estatus',
+        'resuelto_por',
+        'resuelto_en',
+        'nota_resolucion',
     ];
 
     protected function casts(): array
     {
         return [
-            'resolved_at' => 'datetime',
+            'resuelto_en' => 'datetime',
         ];
     }
 
     public function reporter(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'reporter_id');
+        return $this->belongsTo(User::class, 'reportante_id');
     }
 
     public function resolver(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'resolved_by');
+        return $this->belongsTo(User::class, 'resuelto_por');
     }
 
     public function reportable(): MorphTo
     {
-        return $this->morphTo();
+        return $this->morphTo('reportable', 'reportable_tipo', 'reportable_id');
     }
 }

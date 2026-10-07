@@ -12,35 +12,36 @@ return new class extends Migration
         // Reputación de 3+ ejes, no una sola estrella (Fase 1 §13).
         // Cada participante de la operación califica una sola vez (unique operation_id+reviewer_id);
         // qué columnas llena depende de si reviewer es comprador o vendedor (se valida en el Service).
-        Schema::create('reviews', function (Blueprint $table) {
+        Schema::create('resenas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('operation_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('reviewer_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('reviewee_id')->constrained('users')->cascadeOnDelete();
-            $table->unsignedTinyInteger('accuracy')->nullable();
-            $table->unsignedTinyInteger('fulfillment')->nullable();
-            $table->unsignedTinyInteger('communication')->nullable();
-            $table->unsignedTinyInteger('payment')->nullable();
-            $table->unsignedTinyInteger('reception')->nullable();
-            $table->string('comment', 500)->nullable();
-            $table->timestamps();
+            $table->foreignId('operacion_id')->constrained('operaciones')->cascadeOnDelete();
+            $table->foreignId('autor_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->foreignId('evaluado_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->unsignedTinyInteger('exactitud')->nullable();
+            $table->unsignedTinyInteger('cumplimiento')->nullable();
+            $table->unsignedTinyInteger('comunicacion')->nullable();
+            $table->unsignedTinyInteger('pago')->nullable();
+            $table->unsignedTinyInteger('recepcion')->nullable();
+            $table->string('comentario', 500)->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->unique(['operation_id', 'reviewer_id']);
+            $table->unique(['operacion_id', 'autor_id']);
         });
 
         DB::statement(<<<'SQL'
-            ALTER TABLE reviews ADD CONSTRAINT reviews_scores_range_chk CHECK (
-              (accuracy IS NULL OR accuracy BETWEEN 1 AND 5) AND
-              (fulfillment IS NULL OR fulfillment BETWEEN 1 AND 5) AND
-              (communication IS NULL OR communication BETWEEN 1 AND 5) AND
-              (payment IS NULL OR payment BETWEEN 1 AND 5) AND
-              (reception IS NULL OR reception BETWEEN 1 AND 5)
+            ALTER TABLE resenas ADD CONSTRAINT resenas_calificaciones_rango_chk CHECK (
+              (exactitud IS NULL OR exactitud BETWEEN 1 AND 5) AND
+              (cumplimiento IS NULL OR cumplimiento BETWEEN 1 AND 5) AND
+              (comunicacion IS NULL OR comunicacion BETWEEN 1 AND 5) AND
+              (pago IS NULL OR pago BETWEEN 1 AND 5) AND
+              (recepcion IS NULL OR recepcion BETWEEN 1 AND 5)
             )
         SQL);
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('reviews');
+        Schema::dropIfExists('resenas');
     }
 };

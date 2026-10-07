@@ -6,37 +6,39 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+class Category extends Modelo
 {
+    protected $table = 'categorias';
+
     protected $fillable = [
-        'parent_id',
-        'name',
+        'categoria_padre_id',
+        'nombre',
         'slug',
-        'color_key',
-        'icon',
-        'sort_order',
-        'is_active',
+        'clave_color',
+        'icono',
+        'orden',
+        'activo',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_active' => 'boolean',
+            'activo' => 'boolean',
         ];
     }
 
     public function parent(): BelongsTo
     {
-        return $this->belongsTo(Category::class, 'parent_id');
+        return $this->belongsTo(Category::class, 'categoria_padre_id');
     }
 
     public function children(): HasMany
     {
-        return $this->hasMany(Category::class, 'parent_id');
+        return $this->hasMany(Category::class, 'categoria_padre_id');
     }
 
     public function productTypes(): HasMany
     {
-        return $this->hasMany(ProductType::class);
+        return $this->hasMany(ProductType::class, 'categoria_id');
     }
 }

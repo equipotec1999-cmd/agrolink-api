@@ -117,3 +117,6 @@ database/seeders/       CatalogSeeder + RolesAndPermissionsSeeder
 database/migrations/    31 migraciones (30 propias + RBAC de spatie)
 routes/api.php
 ```
+
+## Base de datos
+Tablas y columnas del dominio en español: ver [`docs/DICCIONARIO_DATOS.md`](docs/DICCIONARIO_DATOS.md). La API JSON conserva sus claves en inglés.

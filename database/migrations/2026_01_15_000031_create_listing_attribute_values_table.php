@@ -9,29 +9,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('listing_attribute_values', function (Blueprint $table) {
+        Schema::create('valores_atributo_publicacion', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('listing_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('attribute_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('option_id')->nullable()->constrained('attribute_options')->nullOnDelete();
+            $table->foreignId('publicacion_id')->constrained('publicaciones')->cascadeOnDelete();
+            $table->foreignId('atributo_id')->constrained('atributos')->cascadeOnDelete();
+            $table->foreignId('opcion_id')->nullable()->constrained('opciones_atributo')->nullOnDelete();
             // Una sola columna se usa según attributes.data_type; el resto queda NULL.
-            $table->text('value_text')->nullable();
-            $table->decimal('value_number', 14, 4)->nullable();
-            $table->boolean('value_bool')->nullable();
-            $table->date('value_date')->nullable();
+            $table->text('valor_texto')->nullable();
+            $table->decimal('valor_numero', 14, 4)->nullable();
+            $table->boolean('valor_booleano')->nullable();
+            $table->date('valor_fecha')->nullable();
             // Nivel de confianza del dato (Fase 1 §8): nunca se asume válido un documento subido.
-            $table->enum('verification_level', ['declared', 'documented', 'professional'])
+            $table->enum('nivel_verificacion', ['declared', 'documented', 'professional'])
                 ->default('declared');
-            $table->timestamps();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->unique(['listing_id', 'attribute_id']);
+            $table->unique(['publicacion_id', 'atributo_id']);
         });
 
-        DB::statement('CREATE INDEX lav_attribute_number_idx ON listing_attribute_values(attribute_id, value_number)');
+        DB::statement('CREATE INDEX vap_atributo_numero_idx ON valores_atributo_publicacion(atributo_id, valor_numero)');
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('listing_attribute_values');
+        Schema::dropIfExists('valores_atributo_publicacion');
     }
 };

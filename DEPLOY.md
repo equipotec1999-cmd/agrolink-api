@@ -30,3 +30,19 @@
 - Plan free de Render: se duerme tras ~15 min sin tráfico; la primera petición tarda ~1 min.
 - Corre `composer install` en tu PC y haz commit de `composer.lock` (no existe aún).
 - Usuarios admin/moderador: créalos después con `php artisan tinker` en el Shell de Render o localmente apuntando a la BD.
+
+## Base de datos en español (rama `bd-espanol`)
+Las tablas y columnas del dominio están en español (ver `docs/DICCIONARIO_DATOS.md`). Como las migraciones
+se reescribieron en lugar de agregar renombres, una base ya migrada con los nombres viejos **no se actualiza sola**:
+hay que reiniciarla (se pierden los datos de prueba).
+
+**Local:** `php artisan migrate:fresh --seed`
+
+**Supabase** (SQL Editor), antes de desplegar la rama:
+```sql
+drop schema public cascade;
+create schema public;
+grant usage, create on schema public to postgres, anon, authenticated, service_role;
+```
+PostGIS vive en el esquema `extensions`, así que no se pierde. Al arrancar, el contenedor vuelve a migrar y a sembrar
+roles + catálogo. Las fotos subidas antes quedan huérfanas en Storage: bórralas desde el panel.

@@ -11,24 +11,24 @@ class UserResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'phone' => $this->phone,
+            'name' => $this->nombre,
+            'email' => $this->correo,
+            'phone' => $this->telefono,
             'profile' => [
-                'avatar_path' => $this->profile?->avatar_path,
-                'bio' => $this->profile?->bio,
-                'state' => $this->profile?->state,
-                'municipality' => $this->profile?->municipality,
+                'avatar_path' => $this->profile?->ruta_avatar,
+                'bio' => $this->profile?->biografia,
+                'state' => $this->profile?->estado,
+                'municipality' => $this->profile?->municipio,
             ],
             'seller_profile' => $this->when($this->sellerProfile, fn () => [
-                'business_name' => $this->sellerProfile->business_name,
-                'is_verified' => $this->sellerProfile->is_verified,
-                'completed_operations' => $this->sellerProfile->completed_operations,
-                'rating_accuracy' => $this->sellerProfile->rating_accuracy,
-                'rating_fulfillment' => $this->sellerProfile->rating_fulfillment,
-                'rating_communication' => $this->sellerProfile->rating_communication,
+                'business_name' => $this->sellerProfile->nombre_negocio,
+                'is_verified' => $this->sellerProfile->verificado,
+                'completed_operations' => $this->sellerProfile->operaciones_completadas,
+                'rating_accuracy' => $this->sellerProfile->calificacion_exactitud,
+                'rating_fulfillment' => $this->sellerProfile->calificacion_cumplimiento,
+                'rating_communication' => $this->sellerProfile->calificacion_comunicacion,
             ]),
-            'created_at' => $this->created_at,
+            'created_at' => $this->creado_en,
         ];
     }
 }

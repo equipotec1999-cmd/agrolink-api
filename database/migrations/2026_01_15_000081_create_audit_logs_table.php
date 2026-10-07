@@ -9,24 +9,24 @@ return new class extends Migration
     public function up(): void
     {
         // Bitácora de solo inserción (Fase 1 §21): quién hizo qué, sobre qué modelo.
-        Schema::create('audit_logs', function (Blueprint $table) {
+        Schema::create('bitacora_auditoria', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-            $table->string('action', 100);
-            $table->string('auditable_type', 60)->nullable();
+            $table->foreignId('usuario_id')->nullable()->constrained('usuarios')->nullOnDelete();
+            $table->string('accion', 100);
+            $table->string('auditable_tipo', 60)->nullable();
             $table->unsignedBigInteger('auditable_id')->nullable();
-            $table->jsonb('changes')->nullable();
-            $table->string('ip_address', 45)->nullable();
-            $table->string('user_agent')->nullable();
-            $table->timestamp('created_at')->nullable();
+            $table->jsonb('cambios')->nullable();
+            $table->string('direccion_ip', 45)->nullable();
+            $table->string('agente_usuario')->nullable();
+            $table->timestamp('creado_en')->nullable();
 
-            $table->index(['auditable_type', 'auditable_id']);
-            $table->index('user_id');
+            $table->index(['auditable_tipo', 'auditable_id']);
+            $table->index('usuario_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('audit_logs');
+        Schema::dropIfExists('bitacora_auditoria');
     }
 };

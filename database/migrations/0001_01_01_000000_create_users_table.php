@@ -8,26 +8,27 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('usuarios', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->string('phone', 20)->nullable();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('nombre');
+            $table->string('correo')->unique();
+            $table->string('telefono', 20)->nullable();
+            $table->timestamp('correo_verificado_en')->nullable();
+            $table->string('contrasena');
             // 2FA obligatorio para permisos administrativos (requisito de seguridad, Fase 1 §21).
-            $table->text('two_factor_secret')->nullable();
-            $table->text('two_factor_recovery_codes')->nullable();
-            $table->timestamp('two_factor_confirmed_at')->nullable();
-            $table->rememberToken();
-            $table->timestamps();
+            $table->text('secreto_dos_factores')->nullable();
+            $table->text('codigos_recuperacion_dos_factores')->nullable();
+            $table->timestamp('dos_factores_confirmado_en')->nullable();
+            $table->string('token_recordar', 100)->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
             // Soft delete: un usuario dado de baja no borra sus publicaciones/operaciones históricas.
-            $table->softDeletes();
+            $table->softDeletes('eliminado_en');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('usuarios');
     }
 };

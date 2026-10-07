@@ -11,27 +11,28 @@ return new class extends Migration
     {
         // Capa de reglas regulatorias, independiente del código (Fase 1 §22).
         // Se edita desde administración; el backend nunca decide requisitos legales a mano.
-        Schema::create('compliance_rules', function (Blueprint $table) {
+        Schema::create('reglas_cumplimiento', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_type_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->foreignId('category_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->string('title', 180);
-            $table->text('description')->nullable();
-            $table->boolean('document_suggested')->default(false);
-            $table->boolean('document_required')->default(false);
+            $table->foreignId('tipo_producto_id')->nullable()->constrained('tipos_producto')->cascadeOnDelete();
+            $table->foreignId('categoria_id')->nullable()->constrained('categorias')->cascadeOnDelete();
+            $table->string('titulo', 180);
+            $table->text('descripcion')->nullable();
+            $table->boolean('documento_sugerido')->default(false);
+            $table->boolean('documento_requerido')->default(false);
             // Siempre citar la fuente oficial (SENASICA, SAT, PROFECO...), nunca inventarla.
-            $table->string('source_name', 120);
-            $table->string('source_url')->nullable();
-            $table->date('effective_from')->nullable();
-            $table->date('effective_to')->nullable();
-            $table->timestamps();
+            $table->string('nombre_fuente', 120);
+            $table->string('url_fuente')->nullable();
+            $table->date('vigente_desde')->nullable();
+            $table->date('vigente_hasta')->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
         });
 
-        DB::statement('ALTER TABLE compliance_rules ADD CONSTRAINT compliance_rules_scope_chk CHECK (product_type_id IS NOT NULL OR category_id IS NOT NULL)');
+        DB::statement('ALTER TABLE reglas_cumplimiento ADD CONSTRAINT reglas_cumplimiento_alcance_chk CHECK (tipo_producto_id IS NOT NULL OR categoria_id IS NOT NULL)');
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('compliance_rules');
+        Schema::dropIfExists('reglas_cumplimiento');
     }
 };

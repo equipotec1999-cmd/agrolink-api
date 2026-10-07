@@ -8,23 +8,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('saved_searches', function (Blueprint $table) {
+        Schema::create('busquedas_guardadas', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->string('name', 150);
+            $table->foreignId('usuario_id')->constrained('usuarios')->cascadeOnDelete();
+            $table->string('nombre', 150);
             // Filtros serializados tal como los arma SearchFilters en Flutter (mismo shape).
-            $table->jsonb('query')->default('{}');
-            $table->boolean('notify_on_match')->default(true);
-            $table->boolean('notify_on_price_change')->default(false);
-            $table->timestamp('last_notified_at')->nullable();
-            $table->timestamps();
+            $table->jsonb('consulta')->default('{}');
+            $table->boolean('avisar_coincidencia')->default(true);
+            $table->boolean('avisar_cambio_precio')->default(false);
+            $table->timestamp('ultimo_aviso_en')->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index('user_id');
+            $table->index('usuario_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('saved_searches');
+        Schema::dropIfExists('busquedas_guardadas');
     }
 };

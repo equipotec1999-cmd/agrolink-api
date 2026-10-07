@@ -10,24 +10,25 @@ return new class extends Migration
     {
         // Tabla lista desde ahora (Fase 1 §12) aunque su lógica se activa en Fase 5.
         // Nace siempre en OFERTA_ACEPTADA: NEGOCIANDO/OFERTA_ENVIADA ya son estados de `offers`.
-        Schema::create('operations', function (Blueprint $table) {
+        Schema::create('operaciones', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('offer_id')->unique()->constrained()->restrictOnDelete();
-            $table->foreignId('listing_id')->constrained()->restrictOnDelete();
-            $table->foreignId('buyer_id')->constrained('users')->restrictOnDelete();
-            $table->foreignId('seller_id')->constrained('users')->restrictOnDelete();
-            $table->decimal('amount', 14, 2);
-            $table->decimal('quantity', 12, 2);
-            $table->enum('status', [
+            $table->foreignId('oferta_id')->unique()->constrained('ofertas')->restrictOnDelete();
+            $table->foreignId('publicacion_id')->constrained('publicaciones')->restrictOnDelete();
+            $table->foreignId('comprador_id')->constrained('usuarios')->restrictOnDelete();
+            $table->foreignId('vendedor_id')->constrained('usuarios')->restrictOnDelete();
+            $table->decimal('monto', 14, 2);
+            $table->decimal('cantidad', 12, 2);
+            $table->enum('estatus', [
                 'oferta_aceptada', 'pendiente_pago', 'pagado', 'preparando_entrega',
                 'en_transito', 'entregado', 'confirmado', 'completado', 'cancelado', 'disputa',
             ])->default('oferta_aceptada');
-            $table->timestamps();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('operations');
+        Schema::dropIfExists('operaciones');
     }
 };

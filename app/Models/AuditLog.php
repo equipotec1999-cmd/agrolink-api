@@ -5,29 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class AuditLog extends Model
+class AuditLog extends Modelo
 {
+    protected $table = 'bitacora_auditoria';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'user_id',
-        'action',
-        'auditable_type',
+        'usuario_id',
+        'accion',
+        'auditable_tipo',
         'auditable_id',
-        'changes',
-        'ip_address',
-        'user_agent',
+        'cambios',
+        'direccion_ip',
+        'agente_usuario',
     ];
 
     protected function casts(): array
     {
         return [
-            'changes' => 'array',
+            'cambios' => 'array',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

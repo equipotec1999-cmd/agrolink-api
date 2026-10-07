@@ -5,38 +5,40 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SellerProfile extends Model
+class SellerProfile extends Modelo
 {
-    protected $primaryKey = 'user_id';
+    protected $table = 'perfiles_vendedor';
+
+    protected $primaryKey = 'usuario_id';
 
     public $incrementing = false;
 
     protected $fillable = [
-        'user_id',
-        'business_name',
-        'is_verified',
-        'verified_at',
-        'completed_operations',
-        'cancelled_operations',
-        'rating_accuracy',
-        'rating_fulfillment',
-        'rating_communication',
-        'avg_response_minutes',
+        'usuario_id',
+        'nombre_negocio',
+        'verificado',
+        'verificado_en',
+        'operaciones_completadas',
+        'operaciones_canceladas',
+        'calificacion_exactitud',
+        'calificacion_cumplimiento',
+        'calificacion_comunicacion',
+        'minutos_respuesta_promedio',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_verified' => 'boolean',
-            'verified_at' => 'datetime',
-            'rating_accuracy' => 'float',
-            'rating_fulfillment' => 'float',
-            'rating_communication' => 'float',
+            'verificado' => 'boolean',
+            'verificado_en' => 'datetime',
+            'calificacion_exactitud' => 'float',
+            'calificacion_cumplimiento' => 'float',
+            'calificacion_comunicacion' => 'float',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

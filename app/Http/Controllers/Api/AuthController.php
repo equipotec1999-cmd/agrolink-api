@@ -19,13 +19,13 @@ class AuthController extends Controller
     {
         $user = DB::transaction(function () use ($request) {
             $user = User::create([
-                'name' => $request->string('name'),
-                'email' => $request->string('email'),
-                'phone' => $request->input('phone'),
-                'password' => $request->string('password'),
+                'nombre' => $request->string('name'),
+                'correo' => $request->string('email'),
+                'telefono' => $request->input('phone'),
+                'contrasena' => $request->string('password'),
             ]);
 
-            Profile::create(['user_id' => $user->id]);
+            Profile::create(['usuario_id' => $user->id]);
 
             return $user;
         });
@@ -42,10 +42,10 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request)
     {
-        $user = User::where('email', $request->string('email'))->first();
+        $user = User::where('correo', $request->string('email'))->first();
 
         // Mensaje genérico a propósito: no revela si falló el correo o la contraseña.
-        if (! $user || ! Hash::check($request->string('password'), $user->password)) {
+        if (! $user || ! Hash::check($request->string('password'), $user->contrasena)) {
             throw ValidationException::withMessages([
                 'email' => ['Correo o contraseña incorrectos.'],
             ]);

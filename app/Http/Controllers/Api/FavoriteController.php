@@ -20,16 +20,16 @@ class FavoriteController extends Controller
         $listings = Listing::query()
             ->with([
                 'productType', 'user.sellerProfile', 'media',
-                'location' => fn ($q) => $q->addSelect([
-                    DB::raw('ST_Y(approx_location::geometry) as approx_lat'),
-                    DB::raw('ST_X(approx_location::geometry) as approx_lng'),
+                'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
+                    DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
+                    DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
                 ]),
             ])
-            ->where('listings.status', 'published')
-            ->join('favorites', 'favorites.listing_id', '=', 'listings.id')
-            ->where('favorites.user_id', $request->user()->id)
-            ->orderByDesc('favorites.created_at')
-            ->select('listings.*')
+            ->where('publicaciones.estatus', 'published')
+            ->join('favoritos', 'favoritos.publicacion_id', '=', 'publicaciones.id')
+            ->where('favoritos.usuario_id', $request->user()->id)
+            ->orderByDesc('favoritos.creado_en')
+            ->select('publicaciones.*')
             ->paginate(50);
 
         return ListingResource::collection($listings);
@@ -39,8 +39,8 @@ class FavoriteController extends Controller
     public function ids(Request $request)
     {
         $ids = $request->user()->favorites()
-            ->whereHas('listing', fn ($q) => $q->where('status', 'published'))
-            ->pluck('listing_id');
+            ->whereHas('listing', fn ($q) => $q->where('estatus', 'published'))
+            ->pluck('publicacion_id');
 
         return response()->json(['data' => $ids]);
     }
@@ -48,9 +48,9 @@ class FavoriteController extends Controller
     /** Idempotente: guardar dos veces el mismo listing no falla ni duplica. */
     public function store(Request $request, Listing $listing)
     {
-        abort_unless($listing->status === 'published', 404);
+        abort_unless($listing->estatus === 'published', 404);
 
-        $request->user()->favorites()->firstOrCreate(['listing_id' => $listing->id]);
+        $request->user()->favorites()->firstOrCreate(['publicacion_id' => $listing->id]);
 
         return response()->noContent();
     }
@@ -58,7 +58,7 @@ class FavoriteController extends Controller
     /** Idempotente: quitar algo que no estaba guardado tampoco falla. */
     public function destroy(Request $request, Listing $listing)
     {
-        $request->user()->favorites()->where('listing_id', $listing->id)->delete();
+        $request->user()->favorites()->where('publicacion_id', $listing->id)->delete();
 
         return response()->noContent();
     }

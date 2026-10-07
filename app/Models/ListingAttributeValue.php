@@ -5,41 +5,43 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ListingAttributeValue extends Model
+class ListingAttributeValue extends Modelo
 {
+    protected $table = 'valores_atributo_publicacion';
+
     protected $fillable = [
-        'listing_id',
-        'attribute_id',
-        'option_id',
-        'value_text',
-        'value_number',
-        'value_bool',
-        'value_date',
-        'verification_level',
+        'publicacion_id',
+        'atributo_id',
+        'opcion_id',
+        'valor_texto',
+        'valor_numero',
+        'valor_booleano',
+        'valor_fecha',
+        'nivel_verificacion',
     ];
 
     protected function casts(): array
     {
         return [
-            'value_number' => 'decimal:4',
-            'value_bool' => 'boolean',
-            'value_date' => 'date',
+            'valor_numero' => 'decimal:4',
+            'valor_booleano' => 'boolean',
+            'valor_fecha' => 'date',
         ];
     }
 
     public function listing(): BelongsTo
     {
-        return $this->belongsTo(Listing::class);
+        return $this->belongsTo(Listing::class, 'publicacion_id');
     }
 
     public function attribute(): BelongsTo
     {
-        return $this->belongsTo(Attribute::class);
+        return $this->belongsTo(Attribute::class, 'atributo_id');
     }
 
     public function option(): BelongsTo
     {
-        return $this->belongsTo(AttributeOption::class, 'option_id');
+        return $this->belongsTo(AttributeOption::class, 'opcion_id');
     }
 
     /**
@@ -48,12 +50,12 @@ class ListingAttributeValue extends Model
      */
     public function getValueAttribute(): mixed
     {
-        return match ($this->attribute?->data_type) {
-            'number' => $this->value_number,
-            'boolean' => $this->value_bool,
-            'date' => $this->value_date,
-            'select' => $this->option?->value ?? $this->value_text,
-            default => $this->value_text,
+        return match ($this->attribute?->tipo_dato) {
+            'number' => $this->valor_numero,
+            'boolean' => $this->valor_booleano,
+            'date' => $this->valor_fecha,
+            'select' => $this->option?->valor ?? $this->valor_texto,
+            default => $this->valor_texto,
         };
     }
 }

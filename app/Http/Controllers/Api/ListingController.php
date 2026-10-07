@@ -32,30 +32,30 @@ class ListingController extends Controller
         $query = Listing::query()
             ->with([
                 'productType', 'user.sellerProfile', 'media',
-                'location' => fn ($q) => $q->addSelect([
-                    DB::raw('ST_Y(approx_location::geometry) as approx_lat'),
-                    DB::raw('ST_X(approx_location::geometry) as approx_lng'),
+                'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
+                    DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
+                    DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
                 ]),
             ])
-            ->where('status', 'published');
+            ->where('estatus', 'published');
 
         if ($request->filled('product_type_id')) {
-            $query->where('product_type_id', $request->integer('product_type_id'));
+            $query->where('tipo_producto_id', $request->integer('product_type_id'));
         }
 
         if ($request->filled('category_id')) {
-            $query->whereHas('productType', fn ($q) => $q->where('category_id', $request->integer('category_id')));
+            $query->whereHas('productType', fn ($q) => $q->where('categoria_id', $request->integer('category_id')));
         }
 
         if ($request->filled('q')) {
             $term = $request->string('q');
             $query->whereRaw(
-                "to_tsvector('spanish', immutable_unaccent(title) || ' ' || immutable_unaccent(coalesce(description, ''))) @@ plainto_tsquery('spanish', immutable_unaccent(?))",
+                "to_tsvector('spanish', immutable_unaccent(titulo) || ' ' || immutable_unaccent(coalesce(descripcion, ''))) @@ plainto_tsquery('spanish', immutable_unaccent(?))",
                 [$term]
             );
         }
 
-        $listings = $query->orderByDesc('published_at')->paginate(20);
+        $listings = $query->orderByDesc('publicado_en')->paginate(20);
 
         return ListingResource::collection($listings);
     }
@@ -69,16 +69,16 @@ class ListingController extends Controller
 
     public function show(Listing $listing)
     {
-        abort_unless($listing->status === 'published' || $listing->user_id === request()->user()?->id, 404);
+        abort_unless($listing->estatus === 'published' || $listing->usuario_id === request()->user()?->id, 404);
 
         $listing->load([
             'productType',
             'user.sellerProfile',
             'media',
             'documents',
-            'location' => fn ($q) => $q->addSelect([
-                DB::raw('ST_Y(approx_location::geometry) as approx_lat'),
-                DB::raw('ST_X(approx_location::geometry) as approx_lng'),
+            'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
+                DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
+                DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
             ]),
         ]);
 
@@ -140,11 +140,11 @@ class ListingController extends Controller
         $dimensions = @getimagesize($request->file('photo')->getRealPath());
 
         $media = $listing->media()->create([
-            'type' => 'photo',
-            'storage_path' => $path,
-            'position' => $listing->media()->count(),
-            'width' => $dimensions[0] ?? null,
-            'height' => $dimensions[1] ?? null,
+            'tipo' => 'photo',
+            'ruta_almacenamiento' => $path,
+            'posicion' => $listing->media()->count(),
+            'ancho' => $dimensions[0] ?? null,
+            'alto' => $dimensions[1] ?? null,
         ]);
 
         return new ListingMediaResource($media);
@@ -153,9 +153,9 @@ class ListingController extends Controller
     public function destroyMedia(Listing $listing, ListingMedia $media)
     {
         $this->authorize('update', $listing);
-        abort_unless($media->listing_id === $listing->id, 404);
+        abort_unless($media->publicacion_id === $listing->id, 404);
 
-        Storage::disk(config('filesystems.default'))->delete($media->storage_path);
+        Storage::disk(config('filesystems.default'))->delete($media->ruta_almacenamiento);
         $media->delete();
 
         return response()->json(['message' => 'Foto eliminada.']);

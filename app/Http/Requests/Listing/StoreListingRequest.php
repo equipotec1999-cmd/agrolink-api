@@ -19,8 +19,8 @@ class StoreListingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'product_type_id' => ['required', 'integer', 'exists:product_types,id'],
-            'property_id' => ['nullable', 'integer', 'exists:properties,id'],
+            'product_type_id' => ['required', 'integer', 'exists:tipos_producto,id'],
+            'property_id' => ['nullable', 'integer', 'exists:predios,id'],
             'title' => ['required', 'string', 'max:180'],
             'description' => ['nullable', 'string', 'max:5000'],
             'price' => ['nullable', 'numeric', 'min:0'],

@@ -6,23 +6,25 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Property extends Model
+class Property extends Modelo
 {
+    protected $table = 'predios';
+
     protected $fillable = [
-        'user_id',
-        'name',
-        'state',
-        'municipality',
-        'postal_code',
-        'exact_location',
-        'approx_location',
-        'is_default',
+        'usuario_id',
+        'nombre',
+        'estado',
+        'municipio',
+        'codigo_postal',
+        'ubicacion_exacta',
+        'ubicacion_aproximada',
+        'es_predeterminado',
     ];
 
     protected function casts(): array
     {
         return [
-            'is_default' => 'boolean',
+            'es_predeterminado' => 'boolean',
         ];
     }
 
@@ -32,11 +34,11 @@ class Property extends Model
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 
     public function listings(): HasMany
     {
-        return $this->hasMany(Listing::class);
+        return $this->hasMany(Listing::class, 'predio_id');
     }
 }

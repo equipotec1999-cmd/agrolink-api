@@ -6,25 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Attribute extends Model
+class Attribute extends Modelo
 {
+    protected $table = 'atributos';
+
     protected $fillable = [
-        'attr_key',
-        'label',
-        'data_type',
-        'unit',
-        'attr_group',
+        'clave',
+        'etiqueta',
+        'tipo_dato',
+        'unidad',
+        'grupo',
     ];
 
     public function options(): HasMany
     {
-        return $this->hasMany(AttributeOption::class)->orderBy('sort_order');
+        return $this->hasMany(AttributeOption::class, 'atributo_id')->orderBy('orden');
     }
 
     public function productTypes(): BelongsToMany
     {
-        return $this->belongsToMany(ProductType::class, 'product_type_attributes')
-            ->withPivot(['is_required', 'is_filterable', 'sort_order', 'min_value', 'max_value'])
-            ->withTimestamps();
+        return $this->belongsToMany(ProductType::class, 'tipo_producto_atributos', 'atributo_id', 'tipo_producto_id')
+            ->withPivot(['es_obligatorio', 'es_filtrable', 'orden', 'valor_minimo', 'valor_maximo'])
+            ->withTimestamps('creado_en', 'actualizado_en');
     }
 }

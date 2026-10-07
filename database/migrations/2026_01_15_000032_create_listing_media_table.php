@@ -8,24 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('listing_media', function (Blueprint $table) {
+        Schema::create('medios_publicacion', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('listing_id')->constrained()->cascadeOnDelete();
-            $table->enum('type', ['photo', 'video'])->default('photo');
+            $table->foreignId('publicacion_id')->constrained('publicaciones')->cascadeOnDelete();
+            $table->enum('tipo', ['photo', 'video'])->default('photo');
             // Solo la clave del archivo en S3/R2; la BD nunca guarda binarios (Fase 1 §16).
-            $table->string('storage_path');
-            $table->unsignedSmallInteger('position')->default(0);
-            $table->unsignedSmallInteger('width')->nullable();
-            $table->unsignedSmallInteger('height')->nullable();
-            $table->unsignedSmallInteger('duration_seconds')->nullable();
-            $table->timestamps();
+            $table->string('ruta_almacenamiento');
+            $table->unsignedSmallInteger('posicion')->default(0);
+            $table->unsignedSmallInteger('ancho')->nullable();
+            $table->unsignedSmallInteger('alto')->nullable();
+            $table->unsignedSmallInteger('duracion_segundos')->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index(['listing_id', 'position']);
+            $table->index(['publicacion_id', 'posicion']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('listing_media');
+        Schema::dropIfExists('medios_publicacion');
     }
 };

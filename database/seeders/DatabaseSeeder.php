@@ -15,10 +15,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Usuario de prueba para desarrollo local; en producción esto no se corre.
-        if (! User::where('email', 'test@example.com')->exists()) {
+        if (! User::where('correo', 'test@example.com')->exists()) {
             User::factory()->create([
-                'name' => 'Usuario de prueba',
-                'email' => 'test@example.com',
+                'nombre' => 'Usuario de prueba',
+                'correo' => 'test@example.com',
             ])->assignRole('vendedor');
         }
     }

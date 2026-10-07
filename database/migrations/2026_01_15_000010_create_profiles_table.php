@@ -8,19 +8,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('profiles', function (Blueprint $table) {
+        Schema::create('perfiles', function (Blueprint $table) {
             // user_id es la PK: relación 1 a 1 estricta, sin id propio.
-            $table->foreignId('user_id')->primary()->constrained()->cascadeOnDelete();
-            $table->string('avatar_path')->nullable();
-            $table->text('bio')->nullable();
-            $table->string('state', 100)->nullable();
-            $table->string('municipality', 100)->nullable();
-            $table->timestamps();
+            $table->foreignId('usuario_id')->primary()->constrained('usuarios')->cascadeOnDelete();
+            $table->string('ruta_avatar')->nullable();
+            $table->text('biografia')->nullable();
+            $table->string('estado', 100)->nullable();
+            $table->string('municipio', 100)->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('profiles');
+        Schema::dropIfExists('perfiles');
     }
 };

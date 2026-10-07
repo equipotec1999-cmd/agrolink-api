@@ -8,25 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('listing_documents', function (Blueprint $table) {
+        Schema::create('documentos_publicacion', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('listing_id')->constrained()->cascadeOnDelete();
-            $table->string('name', 180);
-            $table->string('storage_path');
-            $table->enum('status', ['pending', 'verified', 'rejected', 'expired', 'not_applicable'])
+            $table->foreignId('publicacion_id')->constrained('publicaciones')->cascadeOnDelete();
+            $table->string('nombre', 180);
+            $table->string('ruta_almacenamiento');
+            $table->enum('estatus', ['pending', 'verified', 'rejected', 'expired', 'not_applicable'])
                 ->default('pending');
-            $table->string('note', 255)->nullable();
+            $table->string('nota', 255)->nullable();
             // Quién lo revisó: nunca se auto-aprueba un documento subido (Fase 1 §8).
-            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->timestamp('reviewed_at')->nullable();
-            $table->timestamps();
+            $table->foreignId('revisado_por')->nullable()->constrained('usuarios')->nullOnDelete();
+            $table->timestamp('revisado_en')->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index('listing_id');
+            $table->index('publicacion_id');
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('listing_documents');
+        Schema::dropIfExists('documentos_publicacion');
     }
 };

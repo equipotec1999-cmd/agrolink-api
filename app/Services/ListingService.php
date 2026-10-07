@@ -21,20 +21,20 @@ class ListingService
     {
         return DB::transaction(function () use ($user, $data) {
             $listing = Listing::create([
-                'user_id' => $user->id,
-                'product_type_id' => $data['product_type_id'],
-                'property_id' => $data['property_id'] ?? null,
-                'title' => $data['title'],
+                'usuario_id' => $user->id,
+                'tipo_producto_id' => $data['product_type_id'],
+                'predio_id' => $data['property_id'] ?? null,
+                'titulo' => $data['title'],
                 'slug' => $this->uniqueSlug($data['title']),
-                'description' => $data['description'] ?? null,
-                'price' => $data['price'] ?? null,
-                'price_type' => $data['price_type'],
-                'quantity' => $data['quantity'],
-                'unit' => $data['unit'],
-                'sale_mode' => $data['sale_mode'] ?? 'individual',
-                'negotiable' => $data['negotiable'] ?? false,
-                'status' => 'draft',
-                'moderation_status' => 'pending',
+                'descripcion' => $data['description'] ?? null,
+                'precio' => $data['price'] ?? null,
+                'tipo_precio' => $data['price_type'],
+                'cantidad' => $data['quantity'],
+                'unidad' => $data['unit'],
+                'modalidad_venta' => $data['sale_mode'] ?? 'individual',
+                'negociable' => $data['negotiable'] ?? false,
+                'estatus' => 'draft',
+                'estatus_moderacion' => 'pending',
             ]);
 
             $this->syncAttributes($listing, $data['attributes'] ?? []);
@@ -47,9 +47,17 @@ class ListingService
     public function update(Listing $listing, array $data): Listing
     {
         return DB::transaction(function () use ($listing, $data) {
-            $listing->fill(array_intersect_key($data, array_flip([
-                'title', 'description', 'price', 'price_type', 'quantity', 'unit', 'negotiable',
-            ])));
+            // Claves de la API (inglés) -> columnas de la base (español).
+            $columnas = [
+                'title' => 'titulo', 'description' => 'descripcion', 'price' => 'precio',
+                'price_type' => 'tipo_precio', 'quantity' => 'cantidad', 'unit' => 'unidad',
+                'negotiable' => 'negociable',
+            ];
+            foreach ($columnas as $clave => $columna) {
+                if (array_key_exists($clave, $data)) {
+                    $listing->{$columna} = $data[$clave];
+                }
+            }
             $listing->save();
 
             if (array_key_exists('attributes', $data)) {
@@ -68,9 +76,9 @@ class ListingService
     public function publish(Listing $listing): Listing
     {
         $listing->update([
-            'status' => 'published',
-            'published_at' => now(),
-            'expires_at' => now()->addDays($listing->productType->default_expiry_days),
+            'estatus' => 'published',
+            'publicado_en' => now(),
+            'vence_en' => now()->addDays($listing->productType->dias_vigencia_predeterminados),
         ]);
 
         return $listing;
@@ -78,7 +86,7 @@ class ListingService
 
     public function archive(Listing $listing): Listing
     {
-        $listing->update(['status' => 'archived']);
+        $listing->update(['estatus' => 'archived']);
 
         return $listing;
     }
@@ -90,12 +98,12 @@ class ListingService
      */
     private function syncAttributes(Listing $listing, array $submitted): void
     {
-        $rules = $listing->productType->attributes()->get()->keyBy('attr_key');
+        $rules = $listing->productType->attributes()->get()->keyBy('clave');
 
-        $missing = $rules->filter(fn ($attr) => $attr->pivot->is_required && ! array_key_exists($attr->attr_key, $submitted));
+        $missing = $rules->filter(fn ($attr) => $attr->pivot->es_obligatorio && ! array_key_exists($attr->clave, $submitted));
         if ($missing->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'attributes' => 'Faltan atributos requeridos: '.$missing->pluck('label')->implode(', '),
+                'attributes' => 'Faltan atributos requeridos: '.$missing->pluck('etiqueta')->implode(', '),
             ]);
         }
 
@@ -108,31 +116,31 @@ class ListingService
                 continue; // atributo desconocido para este tipo, o vacío: se ignora, no se inventa.
             }
 
-            if ($attribute->pivot->min_value !== null && is_numeric($value) && $value < $attribute->pivot->min_value) {
-                throw ValidationException::withMessages(["attributes.$key" => "El mínimo para {$attribute->label} es {$attribute->pivot->min_value}."]);
+            if ($attribute->pivot->valor_minimo !== null && is_numeric($value) && $value < $attribute->pivot->valor_minimo) {
+                throw ValidationException::withMessages(["attributes.$key" => "El mínimo para {$attribute->etiqueta} es {$attribute->pivot->valor_minimo}."]);
             }
-            if ($attribute->pivot->max_value !== null && is_numeric($value) && $value > $attribute->pivot->max_value) {
-                throw ValidationException::withMessages(["attributes.$key" => "El máximo para {$attribute->label} es {$attribute->pivot->max_value}."]);
+            if ($attribute->pivot->valor_maximo !== null && is_numeric($value) && $value > $attribute->pivot->valor_maximo) {
+                throw ValidationException::withMessages(["attributes.$key" => "El máximo para {$attribute->etiqueta} es {$attribute->pivot->valor_maximo}."]);
             }
 
-            $row = ['listing_id' => $listing->id, 'attribute_id' => $attribute->id];
+            $row = ['publicacion_id' => $listing->id, 'atributo_id' => $attribute->id];
 
-            $row = match ($attribute->data_type) {
-                'number' => $row + ['value_number' => $value],
-                'boolean' => $row + ['value_bool' => (bool) $value],
-                'date' => $row + ['value_date' => $value],
+            $row = match ($attribute->tipo_dato) {
+                'number' => $row + ['valor_numero' => $value],
+                'boolean' => $row + ['valor_booleano' => (bool) $value],
+                'date' => $row + ['valor_fecha' => $value],
                 'select' => $row + [
-                    'option_id' => $attribute->options->firstWhere('value', $value)?->id,
-                    'value_text' => $value,
+                    'opcion_id' => $attribute->options->firstWhere('valor', $value)?->id,
+                    'valor_texto' => $value,
                 ],
-                default => $row + ['value_text' => $value],
+                default => $row + ['valor_texto' => $value],
             };
 
             $listing->attributeValues()->create($row);
             $cache[$key] = $value;
         }
 
-        $listing->update(['attributes_cache' => $cache]);
+        $listing->update(['atributos_cache' => $cache]);
     }
 
     /**
@@ -144,12 +152,12 @@ class ListingService
     {
         if (! empty($data['property_id'])) {
             $property = Property::findOrFail($data['property_id']);
-            $state = $property->state;
-            $municipality = $property->municipality;
-            $postalCode = $property->postal_code;
+            $state = $property->estado;
+            $municipality = $property->municipio;
+            $postalCode = $property->codigo_postal;
 
             $point = DB::selectOne(
-                'SELECT ST_Y(exact_location::geometry) as lat, ST_X(exact_location::geometry) as lng FROM properties WHERE id = ?',
+                'SELECT ST_Y(ubicacion_exacta::geometry) as lat, ST_X(ubicacion_exacta::geometry) as lng FROM predios WHERE id = ?',
                 [$property->id]
             );
             $lat = $point->lat;
@@ -169,17 +177,17 @@ class ListingService
         // Un solo upsert: exact_location y approx_location son NOT NULL, así que la
         // fila no puede crearse primero sin puntos y rellenarse después.
         DB::statement(
-            'INSERT INTO listing_locations
-                (listing_id, property_id, state, municipality, postal_code, exact_location, approx_location, created_at, updated_at)
+            'INSERT INTO ubicaciones_publicacion
+                (publicacion_id, predio_id, estado, municipio, codigo_postal, ubicacion_exacta, ubicacion_aproximada, creado_en, actualizado_en)
              VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, NOW(), NOW())
-             ON CONFLICT (listing_id) DO UPDATE SET
-                property_id = EXCLUDED.property_id,
-                state = EXCLUDED.state,
-                municipality = EXCLUDED.municipality,
-                postal_code = EXCLUDED.postal_code,
-                exact_location = EXCLUDED.exact_location,
-                approx_location = EXCLUDED.approx_location,
-                updated_at = NOW()',
+             ON CONFLICT (publicacion_id) DO UPDATE SET
+                predio_id = EXCLUDED.predio_id,
+                estado = EXCLUDED.estado,
+                municipio = EXCLUDED.municipio,
+                codigo_postal = EXCLUDED.codigo_postal,
+                ubicacion_exacta = EXCLUDED.ubicacion_exacta,
+                ubicacion_aproximada = EXCLUDED.ubicacion_aproximada,
+                actualizado_en = NOW()',
             [
                 $listing->id,
                 $data['property_id'] ?? null,

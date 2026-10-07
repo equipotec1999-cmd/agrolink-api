@@ -10,21 +10,22 @@ return new class extends Migration
     {
         // Formato estándar de Laravel Notifications (canal database); compatible con
         // ->notify() de cualquier modelo sin código adicional.
-        Schema::create('notifications', function (Blueprint $table) {
+        Schema::create('notificaciones', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('type');
-            $table->string('notifiable_type');
-            $table->unsignedBigInteger('notifiable_id');
-            $table->jsonb('data');
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
+            $table->string('tipo');
+            $table->string('notificable_tipo');
+            $table->unsignedBigInteger('notificable_id');
+            $table->jsonb('datos');
+            $table->timestamp('leido_en')->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index(['notifiable_type', 'notifiable_id']);
+            $table->index(['notificable_tipo', 'notificable_id']);
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('notifications');
+        Schema::dropIfExists('notificaciones');
     }
 };

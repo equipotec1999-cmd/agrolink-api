@@ -33,13 +33,13 @@ class CatalogSeeder extends Seeder
     {
         $categories = [
             'animales' => Category::updateOrCreate(['slug' => 'animales'], [
-                'name' => 'Animales', 'color_key' => 'animales', 'icon' => 'cow', 'sort_order' => 1,
+                'nombre' => 'Animales', 'clave_color' => 'animales', 'icono' => 'cow', 'orden' => 1,
             ]),
             'apicultura' => Category::updateOrCreate(['slug' => 'apicultura'], [
-                'name' => 'Apicultura', 'color_key' => 'apicultura', 'icon' => 'bee', 'sort_order' => 2,
+                'nombre' => 'Apicultura', 'clave_color' => 'apicultura', 'icono' => 'bee', 'orden' => 2,
             ]),
             'agricultura' => Category::updateOrCreate(['slug' => 'agricultura'], [
-                'name' => 'Agricultura', 'color_key' => 'agricultura', 'icon' => 'chili', 'sort_order' => 3,
+                'nombre' => 'Agricultura', 'clave_color' => 'agricultura', 'icono' => 'chili', 'orden' => 3,
             ]),
         ];
 
@@ -210,11 +210,11 @@ class CatalogSeeder extends Seeder
 
         foreach ($types as $slug => $def) {
             $productType = ProductType::updateOrCreate(['slug' => $slug], [
-                'category_id' => $categories[$def['categoria']]->id,
-                'name' => $def['nombre'],
-                'icon' => $def['icono'],
-                'default_expiry_days' => $def['dias'],
-                'sort_order' => 0,
+                'categoria_id' => $categories[$def['categoria']]->id,
+                'nombre' => $def['nombre'],
+                'icono' => $def['icono'],
+                'dias_vigencia_predeterminados' => $def['dias'],
+                'orden' => 0,
             ]);
 
             $sort = 0;
@@ -224,26 +224,26 @@ class CatalogSeeder extends Seeder
                 $min = $spec[7] ?? null;
                 $max = $spec[8] ?? null;
 
-                $attribute = Attribute::updateOrCreate(['attr_key' => $key], [
-                    'label' => $label,
-                    'data_type' => $dataType,
-                    'unit' => $unit,
-                    'attr_group' => $group,
+                $attribute = Attribute::updateOrCreate(['clave' => $key], [
+                    'etiqueta' => $label,
+                    'tipo_dato' => $dataType,
+                    'unidad' => $unit,
+                    'grupo' => $group,
                 ]);
 
                 if ($dataType === 'select' && $options) {
                     foreach ($options as $i => $value) {
-                        $attribute->options()->updateOrCreate(['value' => $value], ['sort_order' => $i]);
+                        $attribute->options()->updateOrCreate(['valor' => $value], ['orden' => $i]);
                     }
                 }
 
                 $productType->attributes()->syncWithoutDetaching([
                     $attribute->id => [
-                        'is_required' => $required,
-                        'is_filterable' => $filterable,
-                        'sort_order' => $sort++,
-                        'min_value' => $min,
-                        'max_value' => $max,
+                        'es_obligatorio' => $required,
+                        'es_filtrable' => $filterable,
+                        'orden' => $sort++,
+                        'valor_minimo' => $min,
+                        'valor_maximo' => $max,
                     ],
                 ]);
             }

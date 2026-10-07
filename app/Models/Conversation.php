@@ -6,44 +6,46 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Conversation extends Model
+class Conversation extends Modelo
 {
+    protected $table = 'conversaciones';
+
     protected $fillable = [
-        'listing_id',
-        'buyer_id',
-        'seller_id',
-        'last_message_at',
+        'publicacion_id',
+        'comprador_id',
+        'vendedor_id',
+        'ultimo_mensaje_en',
     ];
 
     protected function casts(): array
     {
         return [
-            'last_message_at' => 'datetime',
+            'ultimo_mensaje_en' => 'datetime',
         ];
     }
 
     public function listing(): BelongsTo
     {
-        return $this->belongsTo(Listing::class);
+        return $this->belongsTo(Listing::class, 'publicacion_id');
     }
 
     public function buyer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'buyer_id');
+        return $this->belongsTo(User::class, 'comprador_id');
     }
 
     public function seller(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'seller_id');
+        return $this->belongsTo(User::class, 'vendedor_id');
     }
 
     public function messages(): HasMany
     {
-        return $this->hasMany(Message::class)->orderBy('created_at');
+        return $this->hasMany(Message::class, 'conversacion_id')->orderBy('creado_en');
     }
 
     public function offers(): HasMany
     {
-        return $this->hasMany(Offer::class);
+        return $this->hasMany(Offer::class, 'conversacion_id');
     }
 }

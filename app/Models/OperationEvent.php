@@ -5,21 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class OperationEvent extends Model
+class OperationEvent extends Modelo
 {
+    protected $table = 'eventos_operacion';
+
     const UPDATED_AT = null;
 
     protected $fillable = [
-        'operation_id',
-        'from_status',
-        'to_status',
+        'operacion_id',
+        'estatus_anterior',
+        'estatus_nuevo',
         'actor_id',
-        'note',
+        'nota',
     ];
 
     public function operation(): BelongsTo
     {
-        return $this->belongsTo(Operation::class);
+        return $this->belongsTo(Operation::class, 'operacion_id');
     }
 
     public function actor(): BelongsTo

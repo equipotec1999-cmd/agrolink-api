@@ -9,24 +9,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('messages', function (Blueprint $table) {
+        Schema::create('mensajes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('conversation_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('conversacion_id')->constrained('conversaciones')->cascadeOnDelete();
+            $table->foreignId('remitente_id')->constrained('usuarios')->cascadeOnDelete();
             // Un mensaje puede SER una oferta (referenciarla) en vez de traer texto.
-            $table->foreignId('offer_id')->nullable()->constrained('offers')->nullOnDelete();
-            $table->text('body')->nullable();
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
+            $table->foreignId('oferta_id')->nullable()->constrained('ofertas')->nullOnDelete();
+            $table->text('cuerpo')->nullable();
+            $table->timestamp('leido_en')->nullable();
+            $table->timestamp('creado_en')->nullable();
+            $table->timestamp('actualizado_en')->nullable();
 
-            $table->index(['conversation_id', 'created_at']);
+            $table->index(['conversacion_id', 'creado_en']);
         });
 
-        DB::statement('ALTER TABLE messages ADD CONSTRAINT messages_body_or_offer_chk CHECK (body IS NOT NULL OR offer_id IS NOT NULL)');
+        DB::statement('ALTER TABLE mensajes ADD CONSTRAINT mensajes_cuerpo_u_oferta_chk CHECK (cuerpo IS NOT NULL OR oferta_id IS NOT NULL)');
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('messages');
+        Schema::dropIfExists('mensajes');
     }
 };

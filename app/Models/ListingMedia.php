@@ -5,20 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ListingMedia extends Model
+class ListingMedia extends Modelo
 {
+    protected $table = 'medios_publicacion';
+
     protected $fillable = [
-        'listing_id',
-        'type',
-        'storage_path',
-        'position',
-        'width',
-        'height',
-        'duration_seconds',
+        'publicacion_id',
+        'tipo',
+        'ruta_almacenamiento',
+        'posicion',
+        'ancho',
+        'alto',
+        'duracion_segundos',
     ];
 
     public function listing(): BelongsTo
     {
-        return $this->belongsTo(Listing::class);
+        return $this->belongsTo(Listing::class, 'publicacion_id');
     }
 }

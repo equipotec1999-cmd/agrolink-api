@@ -15,16 +15,16 @@ class ListingPolicy
      */
     public function update(User $user, Listing $listing): bool
     {
-        return $user->id === $listing->user_id;
+        return $user->id === $listing->usuario_id;
     }
 
     public function delete(User $user, Listing $listing): bool
     {
-        return $user->id === $listing->user_id;
+        return $user->id === $listing->usuario_id;
     }
 
     public function publish(User $user, Listing $listing): bool
     {
-        return $user->id === $listing->user_id;
+        return $user->id === $listing->usuario_id;
     }
 }

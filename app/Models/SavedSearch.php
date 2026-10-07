@@ -5,29 +5,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SavedSearch extends Model
+class SavedSearch extends Modelo
 {
+    protected $table = 'busquedas_guardadas';
+
     protected $fillable = [
-        'user_id',
-        'name',
-        'query',
-        'notify_on_match',
-        'notify_on_price_change',
-        'last_notified_at',
+        'usuario_id',
+        'nombre',
+        'consulta',
+        'avisar_coincidencia',
+        'avisar_cambio_precio',
+        'ultimo_aviso_en',
     ];
 
     protected function casts(): array
     {
         return [
-            'query' => 'array',
-            'notify_on_match' => 'boolean',
-            'notify_on_price_change' => 'boolean',
-            'last_notified_at' => 'datetime',
+            'consulta' => 'array',
+            'avisar_coincidencia' => 'boolean',
+            'avisar_cambio_precio' => 'boolean',
+            'ultimo_aviso_en' => 'datetime',
         ];
     }
 
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'usuario_id');
     }
 }

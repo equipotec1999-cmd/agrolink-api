@@ -11,29 +11,29 @@ class ProductTypeResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'category_id' => $this->category_id,
-            'name' => $this->name,
+            'category_id' => $this->categoria_id,
+            'name' => $this->nombre,
             'slug' => $this->slug,
-            'icon' => $this->icon,
-            'default_expiry_days' => $this->default_expiry_days,
+            'icon' => $this->icono,
+            'default_expiry_days' => $this->dias_vigencia_predeterminados,
             // Atributos dinámicos con las reglas del pivot: esto es lo que Flutter usa para
             // armar el formulario de "Características" en el wizard de publicar (Fase 1 §3).
             'attributes' => $this->whenLoaded('attributes', fn () => $this->attributes->map(fn ($attribute) => [
                 'id' => $attribute->id,
-                'key' => $attribute->attr_key,
-                'label' => $attribute->label,
-                'data_type' => $attribute->data_type,
-                'unit' => $attribute->unit,
-                'group' => $attribute->attr_group,
-                'required' => (bool) $attribute->pivot->is_required,
-                'filterable' => (bool) $attribute->pivot->is_filterable,
+                'key' => $attribute->clave,
+                'label' => $attribute->etiqueta,
+                'data_type' => $attribute->tipo_dato,
+                'unit' => $attribute->unidad,
+                'group' => $attribute->grupo,
+                'required' => (bool) $attribute->pivot->es_obligatorio,
+                'filterable' => (bool) $attribute->pivot->es_filtrable,
                 // Postgres regresa las columnas decimal del pivot como STRING ("0.00"),
                 // no como número — igual que nos pasó con price/quantity en ListingResource.
                 // Se castea aquí para que el JSON mande un número real.
-                'min' => $attribute->pivot->min_value !== null ? (float) $attribute->pivot->min_value : null,
-                'max' => $attribute->pivot->max_value !== null ? (float) $attribute->pivot->max_value : null,
-                'options' => $attribute->data_type === 'select'
-                    ? $attribute->options->pluck('value')
+                'min' => $attribute->pivot->valor_minimo !== null ? (float) $attribute->pivot->valor_minimo : null,
+                'max' => $attribute->pivot->valor_maximo !== null ? (float) $attribute->pivot->valor_maximo : null,
+                'options' => $attribute->tipo_dato === 'select'
+                    ? $attribute->options->pluck('valor')
                     : null,
             ])),
         ];
