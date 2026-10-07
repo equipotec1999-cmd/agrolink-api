@@ -153,4 +153,29 @@ class ModerationTest extends ApiTestCase
         $this->assertSame('user', $rows[0]['target_type']);
         $this->assertSame($reportado->id, $rows[0]['user']['id']);
     }
+
+    public function test_mod_ve_el_chat_asociado_a_un_reporte_de_publicacion(): void
+    {
+        $owner = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $listing = $this->makeListing($owner);
+
+        // El comprador abre una conversación y manda un mensaje.
+        $this->as($buyer);
+        $convId = $this->postJson("/api/listings/{$listing->id}/conversation")->json('data.id');
+        $this->postJson("/api/conversations/{$convId}/messages", ['body' => 'Hola, ¿sigue disponible?'])->assertCreated();
+
+        // Y reporta la publicación.
+        $this->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude', 'description' => 'Fotos sospechosas'])
+            ->assertCreated();
+
+        $reportId = \App\Models\Report::first()->id;
+        $data = $this->as($this->makeUser('moderador'))
+            ->getJson("/api/moderation/reports/{$reportId}/thread")
+            ->assertOk()
+            ->json('data');
+
+        $this->assertCount(1, $data);
+        $this->assertSame('Hola, ¿sigue disponible?', $data[0]['messages'][0]['body']);
+    }
 }

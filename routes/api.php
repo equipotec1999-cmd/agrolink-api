@@ -123,6 +123,7 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
         Route::middleware('can:resolve reports')->group(function () {
             Route::get('/reports', [ModerationController::class, 'reports']);
             Route::post('/reports/{report}/resolve', [ModerationController::class, 'resolveReport']);
+            Route::get('/reports/{report}/thread', [ModerationController::class, 'reportThread']);
         });
     });
 

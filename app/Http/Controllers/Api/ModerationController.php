@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ListingResource;
 use App\Models\AuditLog;
+use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\Listing;
 use App\Models\Report;
 use App\Services\NotificationService;
@@ -170,6 +172,60 @@ class ModerationController extends Controller
      * Resolver un reporte. action: dismiss (sin fundamento) | resolve (atendido, sin
      * ocultar) | hide_listing (suspende la publicación y cierra TODOS sus reportes abiertos).
      */
+    /**
+     * Hilo del chat para valorar un reporte: para un reporte de publicación, la
+     * conversación del reportante con el vendedor; para uno de usuario, todas
+     * las conversaciones entre reportante y reportado. Devuelve mensajes en orden.
+     */
+    public function reportThread(Request $request, Report $report)
+    {
+        $reporter = $report->reportante_id;
+
+        $query = Conversation::query();
+        if ($report->reportable_tipo === 'listing') {
+            $query->where('publicacion_id', $report->reportable_id)
+                ->where(fn ($q) => $q->where('comprador_id', $reporter)->orWhere('vendedor_id', $reporter));
+        } else {
+            // Usuarios: ambas direcciones, cualquier publicación.
+            $other = $report->reportable_id;
+            $query->where(function ($q) use ($reporter, $other) {
+                $q->where(fn ($p) => $p->where('comprador_id', $reporter)->where('vendedor_id', $other))
+                  ->orWhere(fn ($p) => $p->where('comprador_id', $other)->where('vendedor_id', $reporter));
+            });
+        }
+
+        $conversations = $query->with(['buyer:id,nombre', 'seller:id,nombre', 'listing:id,titulo'])->get();
+        if ($conversations->isEmpty()) {
+            return response()->json(['data' => []]);
+        }
+
+        $messages = Message::query()
+            ->with('offer')
+            ->whereIn('conversacion_id', $conversations->pluck('id'))
+            ->orderBy('conversacion_id')
+            ->orderBy('id')
+            ->limit(500)
+            ->get();
+
+        return response()->json(['data' => $conversations->map(function (Conversation $c) use ($messages) {
+            $msgs = $messages->where('conversacion_id', $c->id)->values();
+            return [
+                'id' => $c->id,
+                'listing_title' => $c->listing?->titulo,
+                'buyer' => ['id' => $c->buyer->id, 'name' => $c->buyer->nombre],
+                'seller' => ['id' => $c->seller->id, 'name' => $c->seller->nombre],
+                'messages' => $msgs->map(fn (Message $m) => [
+                    'id' => $m->id,
+                    'sender_id' => $m->remitente_id,
+                    'body' => $m->cuerpo,
+                    'offer_amount' => $m->offer?->monto,
+                    'offer_status' => $m->offer?->estatus,
+                    'created_at' => $m->creado_en,
+                ])->values(),
+            ];
+        })->values()]);
+    }
+
     public function resolveReport(Request $request, Report $report)
     {
         $data = $request->validate([
