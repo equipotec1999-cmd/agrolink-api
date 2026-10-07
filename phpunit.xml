@@ -30,6 +30,7 @@
         <env name="DB_DATABASE" value="agrolink_test" force="true"/>
         <env name="DB_SEARCH_PATH" value="public" force="true"/>
         <env name="DB_SSLMODE" value="prefer" force="true"/>
+        <env name="EMAIL_VERIFICATION_REQUIRED" value="true" force="true"/>
         <env name="FIREBASE_CREDENTIALS_BASE64" value="" force="true"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>

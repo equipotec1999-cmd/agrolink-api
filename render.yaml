@@ -42,3 +42,4 @@ services:
       # Confirmación de cuenta por correo (Resend). Valores en el dashboard.
       - { key: RESEND_KEY, sync: false }
       - { key: RESEND_FROM, sync: false }
+      - { key: EMAIL_VERIFICATION_REQUIRED, value: "false" }   # pon "true" cuando Resend tenga dominio verificado

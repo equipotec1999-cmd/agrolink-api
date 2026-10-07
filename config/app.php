@@ -16,6 +16,13 @@ return [
     'name' => env('APP_NAME', 'Laravel'),
 
     /*
+    | Confirmación de cuenta por código al correo. Apagada por defecto: sin dominio
+    | verificado en Resend los correos solo llegan al dueño de la cuenta de Resend.
+    | Enciéndela con EMAIL_VERIFICATION_REQUIRED=true cuando el dominio esté listo.
+    */
+    'verificar_correo' => (bool) env('EMAIL_VERIFICATION_REQUIRED', false),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

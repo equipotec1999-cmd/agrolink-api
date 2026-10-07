@@ -31,8 +31,16 @@ class AuthController extends Controller
             return $user;
         });
 
-        // La cuenta queda sin sesión hasta confirmar el código enviado al correo.
-        // El token completo se entrega en /verify-contact.
+        // Con la confirmación apagada la cuenta entra directo con su token.
+        if (! config('app.verificar_correo')) {
+            return response()->json([
+                'user' => new UserResource($user->load(['profile', 'sellerProfile'])),
+                'token' => $user->createToken('registro')->plainTextToken,
+            ], 201);
+        }
+
+        // Con la confirmación encendida la cuenta queda sin sesión hasta validar el código
+        // enviado al correo; el token completo se entrega en /verify-contact.
         $verify->send($user, 'email', $user->correo);
 
         return response()->json([

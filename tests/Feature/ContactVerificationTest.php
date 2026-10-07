@@ -80,4 +80,20 @@ class ContactVerificationTest extends ApiTestCase
             'code' => '000000',
         ])->assertStatus(422);
     }
+
+    public function test_con_confirmacion_apagada_el_registro_entra_directo(): void
+    {
+        config(['app.verificar_correo' => false]);
+
+        $this->postJson('/api/register', [
+            'name' => 'Ana',
+            'email' => 'ana@ejemplo.com',
+            'password' => 'ClaveSegura123',
+            'password_confirmation' => 'ClaveSegura123',
+        ])->assertCreated()
+          ->assertJsonStructure(['user', 'token'])
+          ->assertJsonMissing(['verification']);
+
+        $this->assertDatabaseMissing('codigos_verificacion_contacto', ['destino' => 'ana@ejemplo.com']);
+    }
 }
