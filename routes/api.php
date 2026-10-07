@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
+use App\Http\Controllers\Api\OfferController;
 use Illuminate\Support\Facades\Route;
 
 // Auth (Fase 1 §21: rate limiting en login/registro contra fuerza bruta).
@@ -46,4 +47,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
     Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send'])
         ->middleware('throttle:60,1');
+
+    // Ofertas (Fase 5, bloque 2). Una oferta es un mensaje especial de la conversación.
+    Route::post('/conversations/{conversation}/offers', [OfferController::class, 'store'])->middleware('throttle:30,1');
+    Route::post('/offers/{offer}/accept', [OfferController::class, 'accept']);
+    Route::post('/offers/{offer}/reject', [OfferController::class, 'reject']);
+    Route::post('/offers/{offer}/cancel', [OfferController::class, 'cancel']);
 });

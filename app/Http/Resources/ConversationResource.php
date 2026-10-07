@@ -35,6 +35,7 @@ class ConversationResource extends JsonResource
             'my_role' => $this->comprador_id === $me ? 'buyer' : 'seller',
             'last_message' => $last ? [
                 'body' => $last->cuerpo,
+                'has_offer' => $last->oferta_id !== null,
                 'sender_id' => $last->remitente_id,
                 'created_at' => $last->creado_en,
             ] : null,

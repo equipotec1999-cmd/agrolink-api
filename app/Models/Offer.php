@@ -28,6 +28,19 @@ class Offer extends Modelo
         ];
     }
 
+    /** Una oferta abierta que nadie respondió en este plazo pasa a `expired`. */
+    public const VIGENCIA_HORAS = 48;
+
+    /** Marca como vencidas las ofertas abiertas cuyo plazo ya pasó (opcionalmente de una conversación). */
+    public static function expireStale(?int $conversationId = null): void
+    {
+        static::query()
+            ->where('estatus', 'sent')
+            ->where('vence_en', '<', now())
+            ->when($conversationId, fn ($q) => $q->where('conversacion_id', $conversationId))
+            ->update(['estatus' => 'expired']);
+    }
+
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class, 'conversacion_id');

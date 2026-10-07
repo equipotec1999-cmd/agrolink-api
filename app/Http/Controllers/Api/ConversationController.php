@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Chat\SendMessageRequest;
 use App\Http\Resources\ConversationResource;
 use App\Http\Resources\MessageResource;
+use App\Http\Resources\OfferResource;
+use App\Models\Offer;
 use App\Models\Conversation;
 use App\Models\Listing;
 use App\Models\Message;
@@ -91,7 +93,9 @@ class ConversationController extends Controller
 
         $request->validate(['after_id' => ['nullable', 'integer', 'min:0']]);
 
-        $query = Message::where('conversacion_id', $conversation->id);
+        Offer::expireStale($conversation->id);
+
+        $query = Message::with('offer.operation')->where('conversacion_id', $conversation->id);
 
         if ($request->filled('after_id')) {
             $messages = $query->where('id', '>', (int) $request->input('after_id'))->orderBy('id')->limit(200)->get();
@@ -105,7 +109,14 @@ class ConversationController extends Controller
             ->whereNull('leido_en')
             ->update(['leido_en' => now()]);
 
-        return MessageResource::collection($messages);
+        // `offers`: estado actual de TODAS las ofertas de la conversación. El polling con
+        // after_id solo trae mensajes nuevos, pero una oferta vieja puede haber sido
+        // aceptada/rechazada después; con esto la app actualiza sus estados.
+        $offers = Offer::with('operation')->where('conversacion_id', $conversation->id)->get();
+
+        return MessageResource::collection($messages)->additional([
+            'offers' => OfferResource::collection($offers)->resolve(),
+        ]);
     }
 
     public function send(SendMessageRequest $request, Conversation $conversation)

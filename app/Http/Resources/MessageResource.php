@@ -14,8 +14,9 @@ class MessageResource extends JsonResource
             'conversation_id' => $this->conversacion_id,
             'sender_id' => $this->remitente_id,
             'body' => $this->cuerpo,
-            // Reservado para el bloque de ofertas; hoy los mensajes son solo texto.
+            // Un mensaje es texto (`body`) o una oferta (`offer`).
             'offer_id' => $this->oferta_id,
+            'offer' => $this->whenLoaded('offer', fn () => $this->offer ? new OfferResource($this->offer) : null),
             'read_at' => $this->leido_en,
             'created_at' => $this->creado_en,
         ];
