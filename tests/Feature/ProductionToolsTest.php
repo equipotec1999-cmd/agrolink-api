@@ -25,7 +25,7 @@ class ProductionToolsTest extends ApiTestCase
         $this->assertTrue($user->needsTwoFactor());
 
         // Debe poder iniciar sesión con esa contraseña (no doble cifrado).
-        $this->postJson('/api/login', ['email' => 'admin@ejemplo.com', 'password' => 'ClaveSegura123'])
+        $this->postJson('/api/login', ['email' => 'admin@ejemplo.com', 'password' => 'ClaveSegura123', 'device_name' => 'test'])
             ->assertOk();
     }
 
