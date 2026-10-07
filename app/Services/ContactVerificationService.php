@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Confirmación de contacto por correo o SMS: genera un código de 6 dígitos,
+ * Confirmación de cuenta por correo: genera un código de 6 dígitos,
  * lo manda por el canal elegido y lo valida. Nunca guarda el código en claro.
  */
 class ContactVerificationService
@@ -41,7 +41,7 @@ class ContactVerificationService
             'creado_en' => Carbon::now(),
         ]);
 
-        $channel === 'email' ? $this->sendByEmail($destination, $code) : $this->sendBySms($destination, $code);
+        $this->sendByEmail($destination, $code);
     }
 
     /** Valida el código. Devuelve el canal que se verificó. */
@@ -114,35 +114,6 @@ class ContactVerificationService
         // Sin proveedor real (modo desarrollo): deja el código en los logs.
         if (! $key) {
             Log::info("Código de verificación (email) para {$to}: {$code}");
-        }
-    }
-
-    private function sendBySms(string $to, string $code): void
-    {
-        $sid = config('services.twilio.sid');
-        $token = config('services.twilio.token');
-        $from = config('services.twilio.from');
-
-        if (! $sid || ! $token || ! $from) {
-            // Sin proveedor de SMS configurado: código al log (modo desarrollo).
-            Log::info("Código de verificación (SMS) para {$to}: {$code}");
-
-            return;
-        }
-
-        try {
-            Http::withBasicAuth($sid, $token)
-                ->asForm()
-                ->timeout(10)
-                ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
-                    'From' => $from,
-                    'To' => $to,
-                    'Body' => "AgroLink: tu código es {$code}. Vence en 15 min.",
-                ])
-                ->throw();
-        } catch (\Throwable $e) {
-            Log::warning('No se pudo enviar SMS de verificación', ['error' => $e->getMessage()]);
-            Log::info("Código de verificación (SMS) para {$to}: {$code}");
         }
     }
 }

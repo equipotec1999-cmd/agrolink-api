@@ -29,24 +29,14 @@ class ContactVerificationTest extends ApiTestCase
         ]);
     }
 
-    public function test_registrarse_con_telefono_tambien_vale(): void
+    public function test_registrarse_falla_sin_correo(): void
     {
         $this->postJson('/api/register', [
             'name' => 'Luis',
             'phone' => '+52 999 123 4567',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
-        ])->assertCreated()
-          ->assertJsonPath('verification.channel', 'sms');
-    }
-
-    public function test_registrarse_falla_sin_correo_ni_telefono(): void
-    {
-        $this->postJson('/api/register', [
-            'name' => 'Luis',
-            'password' => 'ClaveSegura123',
-            'password_confirmation' => 'ClaveSegura123',
-        ])->assertStatus(422);
+        ])->assertStatus(422)->assertJsonValidationErrors('email');
     }
 
     public function test_verify_contact_marca_verificado_y_entrega_token(): void

@@ -31,32 +31,15 @@ class AuthController extends Controller
             return $user;
         });
 
-        // El canal preferido se decide al momento del registro: si vino correo, correo;
-        // si solo vino teléfono, SMS. La cuenta queda sin verificar hasta que el usuario
-        // confirme el código. El token completo se entrega en /verify-contact.
-        $channel = $request->input('verify_channel');
-        $destination = null;
-        if ($channel === 'email' && $user->correo) {
-            $destination = $user->correo;
-        } elseif ($channel === 'sms' && $user->telefono) {
-            $destination = $user->telefono;
-        } elseif ($user->correo) {
-            $channel = 'email';
-            $destination = $user->correo;
-        } elseif ($user->telefono) {
-            $channel = 'sms';
-            $destination = $user->telefono;
-        }
-
-        if ($destination) {
-            $verify->send($user, $channel, $destination);
-        }
+        // La cuenta queda sin sesión hasta confirmar el código enviado al correo.
+        // El token completo se entrega en /verify-contact.
+        $verify->send($user, 'email', $user->correo);
 
         return response()->json([
             'user' => new UserResource($user),
             'verification' => [
-                'channel' => $channel,
-                'destination' => $destination,
+                'channel' => 'email',
+                'destination' => $user->correo,
                 'expires_in_minutes' => 15,
             ],
         ], 201);
@@ -89,13 +72,12 @@ class AuthController extends Controller
             'destination' => ['required', 'string', 'max:180'],
         ]);
 
-        $user = User::where('correo', $data['destination'])->orWhere('telefono', $data['destination'])->first();
+        $user = User::where('correo', $data['destination'])->first();
         if (! $user) {
             // Respuesta genérica para no revelar si existe o no la cuenta.
             return response()->json(['message' => 'Si el contacto existe, enviamos un nuevo código.']);
         }
-        $channel = $user->correo === $data['destination'] ? 'email' : 'sms';
-        $verify->send($user, $channel, $data['destination']);
+        $verify->send($user, 'email', $user->correo);
 
         return response()->json(['message' => 'Código reenviado.']);
     }
