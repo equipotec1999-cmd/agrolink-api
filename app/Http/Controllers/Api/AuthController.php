@@ -20,6 +20,7 @@ class AuthController extends Controller
         $user = DB::transaction(function () use ($request) {
             $user = User::create([
                 'nombre' => $request->string('name'),
+                'apellidos' => $request->input('lastname'),
                 'correo' => $request->string('email'),
                 'telefono' => $request->input('phone'),
                 'contrasena' => $request->string('password'),

@@ -29,6 +29,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::get('/me/stats', [AccountController::class, 'stats']);
     Route::patch('/me', [AccountController::class, 'update']);
     Route::post('/me/password', [AccountController::class, 'password'])->middleware('throttle:6,1');
+    Route::post('/me/avatar', [AccountController::class, 'avatar'])->middleware('throttle:12,1');
+    Route::delete('/me/avatar', [AccountController::class, 'deleteAvatar']);
 });
 
 // Verificación en dos pasos, paso 2 del login: SOLO acepta el token pendiente.

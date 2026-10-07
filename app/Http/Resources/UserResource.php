@@ -12,11 +12,17 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->nombre,
+            'lastname' => $this->apellidos,
+            // Nombre completo listo para mostrar; evita que la app concatene.
+            'full_name' => trim(($this->nombre ?? '').' '.($this->apellidos ?? '')),
             'email' => $this->correo,
             'phone' => $this->telefono,
             'email_verified' => $this->correo_verificado_en !== null,
             'profile' => [
                 'avatar_path' => $this->profile?->ruta_avatar,
+                'avatar_url' => $this->profile?->ruta_avatar
+                    ? \Illuminate\Support\Facades\Storage::disk(config('filesystems.default'))->url($this->profile->ruta_avatar)
+                    : null,
                 'bio' => $this->profile?->biografia,
                 'state' => $this->profile?->estado,
                 'municipality' => $this->profile?->municipio,
