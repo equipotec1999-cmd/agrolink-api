@@ -27,5 +27,6 @@ class AppServiceProvider extends ServiceProvider
         Route::pattern('offer', '[0-9]+');
         Route::pattern('operation', '[0-9]+');
         Route::pattern('report', '[0-9]+');
+        Route::pattern('rule', '[0-9]+');
     }
 }

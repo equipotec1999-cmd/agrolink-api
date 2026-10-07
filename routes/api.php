@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
+use App\Http\Controllers\Api\ComplianceRuleController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FavoriteController;
@@ -94,6 +95,14 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
             Route::get('/reports', [ModerationController::class, 'reports']);
             Route::post('/reports/{report}/resolve', [ModerationController::class, 'resolveReport']);
         });
+    });
+
+    // Administración (permiso + verificación en dos pasos, siempre).
+    Route::prefix('admin')->middleware(['two-factor', 'can:manage compliance rules'])->group(function () {
+        Route::get('/compliance-rules', [ComplianceRuleController::class, 'index']);
+        Route::post('/compliance-rules', [ComplianceRuleController::class, 'store']);
+        Route::patch('/compliance-rules/{rule}', [ComplianceRuleController::class, 'update']);
+        Route::delete('/compliance-rules/{rule}', [ComplianceRuleController::class, 'destroy']);
     });
 
     // Activar/desactivar la verificación en dos pasos (sesión completa).
