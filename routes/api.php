@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
+use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
 use Illuminate\Support\Facades\Route;
@@ -38,4 +39,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/favorites/ids', [FavoriteController::class, 'ids']);
     Route::put('/favorites/{listing}', [FavoriteController::class, 'store']);
     Route::delete('/favorites/{listing}', [FavoriteController::class, 'destroy']);
+
+    // Chat (Fase 5). Mensajes por polling (`after_id`); sin WebSockets por ahora.
+    Route::get('/conversations', [ConversationController::class, 'index']);
+    Route::post('/listings/{listing}/conversation', [ConversationController::class, 'start']);
+    Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+    Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send'])
+        ->middleware('throttle:60,1');
 });
