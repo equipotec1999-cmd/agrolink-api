@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Listing;
-use App\Models\ListingLocation;
 use App\Models\Property;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -167,19 +166,29 @@ class ListingService
         $approxLat = $lat + (mt_rand(-200, 200) / 10000);
         $approxLng = $lng + (mt_rand(-200, 200) / 10000);
 
-        ListingLocation::updateOrCreate(
-            ['listing_id' => $listing->id],
-            [
-                'property_id' => $data['property_id'] ?? null,
-                'state' => $state,
-                'municipality' => $municipality,
-                'postal_code' => $postalCode,
-            ]
-        );
-
+        // Un solo upsert: exact_location y approx_location son NOT NULL, así que la
+        // fila no puede crearse primero sin puntos y rellenarse después.
         DB::statement(
-            'UPDATE listing_locations SET exact_location = ST_SetSRID(ST_MakePoint(?, ?), 4326), approx_location = ST_SetSRID(ST_MakePoint(?, ?), 4326) WHERE listing_id = ?',
-            [$lng, $lat, $approxLng, $approxLat, $listing->id]
+            'INSERT INTO listing_locations
+                (listing_id, property_id, state, municipality, postal_code, exact_location, approx_location, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, ST_SetSRID(ST_MakePoint(?, ?), 4326)::geography, NOW(), NOW())
+             ON CONFLICT (listing_id) DO UPDATE SET
+                property_id = EXCLUDED.property_id,
+                state = EXCLUDED.state,
+                municipality = EXCLUDED.municipality,
+                postal_code = EXCLUDED.postal_code,
+                exact_location = EXCLUDED.exact_location,
+                approx_location = EXCLUDED.approx_location,
+                updated_at = NOW()',
+            [
+                $listing->id,
+                $data['property_id'] ?? null,
+                $state,
+                $municipality,
+                $postalCode,
+                $lng, $lat,
+                $approxLng, $approxLat,
+            ]
         );
     }
 
