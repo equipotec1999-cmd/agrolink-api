@@ -102,7 +102,9 @@ class ListingController extends Controller
 
     public function show(Listing $listing)
     {
-        abort_unless($listing->estatus === 'publicada' || $listing->usuario_id === request()->user()?->id, 404);
+        $u = request()->user();
+        $puedeVerOcultas = $u && ($u->can('moderate listings') || $u->can('moderate documents'));
+        abort_unless($listing->estatus === 'publicada' || $u?->id === $listing->usuario_id || $puedeVerOcultas, 404);
 
         $listing->load([
             'productType',

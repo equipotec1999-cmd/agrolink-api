@@ -97,11 +97,11 @@ class ModerationTest extends ApiTestCase
         $listing = $this->makeListing($owner);
         $reporter = $this->makeUser();
 
-        $this->as($owner)->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude'])->assertUnprocessable();
+        $this->as($owner)->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude', 'description' => 'Motivo claro del reporte'])->assertUnprocessable();
 
         $this->as($reporter)->postJson("/api/listings/{$listing->id}/report", ['reason' => 'inventado'])->assertUnprocessable();
-        $this->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude'])->assertCreated();
-        $this->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude'])->assertUnprocessable();
+        $this->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude', 'description' => 'Motivo claro del reporte'])->assertCreated();
+        $this->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude', 'description' => 'Motivo claro del reporte'])->assertUnprocessable();
     }
 
     public function test_ocultar_por_reporte_suspende_cierra_todos_los_reportes_y_avisa(): void
@@ -110,7 +110,7 @@ class ModerationTest extends ApiTestCase
         $listing = $this->makeListing($owner);
 
         foreach ([$this->makeUser(), $this->makeUser()] as $reporter) {
-            $this->as($reporter)->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude'])->assertCreated();
+            $this->as($reporter)->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude', 'description' => 'Motivo claro del reporte'])->assertCreated();
         }
         $this->assertSame(2, Report::where('estatus', 'abierto')->count());
 
@@ -131,7 +131,7 @@ class ModerationTest extends ApiTestCase
     public function test_desestimar_un_reporte_no_toca_la_publicacion(): void
     {
         $listing = $this->makeListing($this->makeUser('vendedor'));
-        $this->as($this->makeUser())->postJson("/api/listings/{$listing->id}/report", ['reason' => 'otro'])->assertCreated();
+        $this->as($this->makeUser())->postJson("/api/listings/{$listing->id}/report", ['reason' => 'otro', 'description' => 'Motivo claro del reporte'])->assertCreated();
 
         $this->as($this->makeUser('moderador'))
             ->postJson('/api/moderation/reports/'.Report::first()->id.'/resolve', ['action' => 'descartar'])
@@ -145,9 +145,9 @@ class ModerationTest extends ApiTestCase
         $reportado = $this->makeUser('vendedor');
         $quien = $this->makeUser();
 
-        $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude'])->assertCreated();
-        $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude'])->assertUnprocessable();
-        $this->as($reportado)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'otro'])->assertUnprocessable();
+        $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude', 'description' => 'Motivo claro del reporte'])->assertCreated();
+        $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude', 'description' => 'Motivo claro del reporte'])->assertUnprocessable();
+        $this->as($reportado)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'otro', 'description' => 'Motivo claro del reporte'])->assertUnprocessable();
 
         $rows = $this->as($this->makeUser('moderador'))->getJson('/api/moderation/reports')->assertOk()->json('data');
         $this->assertSame('user', $rows[0]['target_type']);

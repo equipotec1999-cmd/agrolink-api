@@ -22,7 +22,7 @@ class ReportController extends Controller
     {
         $data = $request->validate([
             'reason' => ['required', Rule::in(self::REASONS)],
-            'description' => ['nullable', 'string', 'max:500'],
+            'description' => ['required', 'string', 'min:10', 'max:500'],
         ]);
 
         $me = $request->user()->id;
@@ -54,7 +54,7 @@ class ReportController extends Controller
     {
         $data = $request->validate([
             'reason' => ['required', Rule::in(self::REASONS)],
-            'description' => ['nullable', 'string', 'max:500'],
+            'description' => ['required', 'string', 'min:10', 'max:500'],
         ]);
 
         $me = $request->user()->id;

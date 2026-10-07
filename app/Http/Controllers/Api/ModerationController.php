@@ -86,6 +86,27 @@ class ModerationController extends Controller
         return response()->noContent();
     }
 
+    /** Suspender una publicación ya publicada (por queja ajena o moderación directa). */
+    public function suspend(Request $request, Listing $listing)
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:300']]);
+        abort_unless(in_array($listing->estatus, ['publicada', 'en_revision', 'rechazada'], true), 422, 'Esta publicación no puede suspenderse.');
+        $listing->update(['estatus' => 'suspended', 'motivo_moderacion' => $data['reason']]);
+        $this->audit($request, 'listing.suspended', 'listing', $listing->id, ['motivo' => $data['reason']]);
+        NotificationService::listingModerated('listing_suspended', $listing, $data['reason']);
+        return response()->noContent();
+    }
+
+    /** Eliminar una publicación (moderación). Soft delete: ya no aparece en ninguna parte. */
+    public function destroy(Request $request, Listing $listing)
+    {
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:300']]);
+        $this->audit($request, 'listing.deleted', 'listing', $listing->id, ['motivo' => $data['reason'], 'titulo' => $listing->titulo]);
+        NotificationService::listingModerated('listing_suspended', $listing, 'Eliminada por moderación: '.$data['reason']);
+        $listing->delete();
+        return response()->noContent();
+    }
+
     /** Rechazar: la publicación deja de ser visible y se avisa al dueño con el motivo. */
     public function reject(Request $request, Listing $listing)
     {

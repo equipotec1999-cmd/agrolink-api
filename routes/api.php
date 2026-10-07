@@ -111,6 +111,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
             Route::get('/listings', [ModerationController::class, 'listings']);
             Route::post('/listings/{listing}/approve', [ModerationController::class, 'approve']);
             Route::post('/listings/{listing}/reject', [ModerationController::class, 'reject']);
+            Route::post('/listings/{listing}/suspend', [ModerationController::class, 'suspend']);
+            Route::delete('/listings/{listing}', [ModerationController::class, 'destroy']);
         });
         Route::middleware('can:moderate documents')->group(function () {
             Route::get('/verifications', [VerificationReviewController::class, 'index']);
