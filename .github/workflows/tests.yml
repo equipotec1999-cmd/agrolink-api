@@ -52,4 +52,14 @@ jobs:
           php artisan key:generate
 
       - name: Pruebas
-        run: vendor/bin/phpunit --testdox
+        run: |
+          set +e
+          vendor/bin/phpunit --testdox > phpunit-out.txt 2>&1
+          code=$?
+          cat phpunit-out.txt
+          if [ $code -ne 0 ]; then
+            # Resumen de fallos como anotación (se puede leer sin descargar los logs).
+            msg=$(grep -vE '^\s*$' phpunit-out.txt | grep -vE '^(PHPUnit|Runtime|Configuration|Random)' | head -c 9000 | sed ':a;N;$!ba;s/%/%25/g;s/\r//g;s/\n/%0A/g')
+            echo "::error title=PHPUnit fallo::$msg"
+          fi
+          exit $code
