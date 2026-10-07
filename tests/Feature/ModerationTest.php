@@ -143,7 +143,7 @@ class ModerationTest extends ApiTestCase
     public function test_reportar_usuario_llega_a_la_cola_y_no_se_duplica(): void
     {
         $reportado = $this->makeUser('vendedor');
-        $quien = $this->makeUser('comprador');
+        $quien = $this->makeUser();
 
         $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude'])->assertCreated();
         $this->as($quien)->postJson("/api/users/{$reportado->id}/report", ['reason' => 'fraude'])->assertUnprocessable();
