@@ -6,9 +6,11 @@ use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
+use App\Http\Controllers\Api\ModerationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OfferController;
 use App\Http\Controllers\Api\OperationController;
+use App\Http\Controllers\Api\ReportController;
 use Illuminate\Support\Facades\Route;
 
 // Auth (Fase 1 §21: rate limiting en login/registro contra fuerza bruta).
@@ -70,4 +72,20 @@ Route::middleware('auth:sanctum')->group(function () {
     // Push (Fase 5, bloque 5): token FCM del celular.
     Route::post('/devices', [DeviceController::class, 'store']);
     Route::post('/devices/unregister', [DeviceController::class, 'destroy']);
+
+    // Moderación (Fase 6). Reportar: cualquier usuario con sesión.
+    Route::post('/listings/{listing}/report', [ReportController::class, 'store'])->middleware('throttle:10,1');
+
+    // Solo con permiso (no por nombre de rol).
+    Route::prefix('moderation')->group(function () {
+        Route::middleware('can:moderate listings')->group(function () {
+            Route::get('/listings', [ModerationController::class, 'listings']);
+            Route::post('/listings/{listing}/approve', [ModerationController::class, 'approve']);
+            Route::post('/listings/{listing}/reject', [ModerationController::class, 'reject']);
+        });
+        Route::middleware('can:resolve reports')->group(function () {
+            Route::get('/reports', [ModerationController::class, 'reports']);
+            Route::post('/reports/{report}/resolve', [ModerationController::class, 'resolveReport']);
+        });
+    });
 });

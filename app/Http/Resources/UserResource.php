@@ -28,6 +28,9 @@ class UserResource extends JsonResource
                 'rating_fulfillment' => $this->sellerProfile->calificacion_cumplimiento,
                 'rating_communication' => $this->sellerProfile->calificacion_comunicacion,
             ]),
+            // La app muestra la sección de moderación solo si hay algún permiso de moderación
+            // (se comprueba por permiso, nunca por nombre de rol).
+            'can_moderate' => $this->can('moderate listings') || $this->can('resolve reports'),
             'created_at' => $this->creado_en,
         ];
     }

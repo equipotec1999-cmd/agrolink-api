@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Conversation;
+use App\Models\Listing;
 use App\Models\Offer;
 use App\Models\User;
 use App\Models\UserNotification;
@@ -98,6 +99,16 @@ class NotificationService
             'amount' => (float) $offer->monto,
             'quantity' => (float) $offer->cantidad,
             'operation_id' => $operationId,
+        ]);
+    }
+
+    /** Aviso al dueño de una publicación: listing_rejected | listing_suspended. */
+    public static function listingModerated(string $type, Listing $listing, ?string $reason): void
+    {
+        self::put($listing->usuario_id, $type, [
+            'listing_id' => (string) $listing->id,
+            'listing_title' => $listing->titulo,
+            'reason' => $reason,
         ]);
     }
 }
