@@ -21,7 +21,12 @@ Estas claves se pegaron en chats/capturas durante el desarrollo; considéralas c
    (columna `disco`). La API es la única que los entrega, con sesión de moderación y registro en bitácora.
 
 ## 3. Crear el administrador
-En Render › Shell (o local apuntando a la BD):
+**Sin Shell (plan gratuito):** en Render › Environment agrega `ADMIN_EMAIL` (y opcional `ADMIN_NAME`,
+`ADMIN_PASSWORD`, mínimo 10 caracteres). Al redesplegar, el contenedor crea la cuenta y, si no pusiste
+contraseña, imprime una temporal en Logs. **Borra esas variables después.** La revisión `agrolink:preflight`
+también se imprime en Logs en cada arranque.
+
+Con Shell (plan de pago) o local apuntando a la BD:
 ```
 php artisan agrolink:crear-admin tu-correo@dominio.com --nombre="Tu Nombre"
 ```

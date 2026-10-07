@@ -14,6 +14,20 @@ php artisan migrate --force
 php artisan db:seed --class=RolesAndPermissionsSeeder --force
 php artisan db:seed --class=CatalogSeeder --force
 
+# Crea/promueve el administrador si defines ADMIN_EMAIL (opcional: ADMIN_NAME, ADMIN_PASSWORD).
+# Sin ADMIN_PASSWORD genera una temporal y la imprime en los logs de Render. Es idempotente:
+# si la cuenta ya existe solo se asegura el rol. Borra estas variables después del primer arranque.
+if [ -n "${ADMIN_EMAIL:-}" ]; then
+  if [ -n "${ADMIN_PASSWORD:-}" ]; then
+    php artisan agrolink:crear-admin "$ADMIN_EMAIL" --nombre="${ADMIN_NAME:-Administrador}" --password="$ADMIN_PASSWORD" || true
+  else
+    php artisan agrolink:crear-admin "$ADMIN_EMAIL" --nombre="${ADMIN_NAME:-Administrador}" || true
+  fi
+fi
+
+# Revisión previa a producción en los logs (no detiene el arranque).
+php artisan agrolink:preflight || true
+
 # Con disco local (sin S3) hace falta el enlace público; con S3 no estorba.
 php artisan storage:link 2>/dev/null || true
 
