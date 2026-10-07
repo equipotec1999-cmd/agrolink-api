@@ -60,7 +60,6 @@ class CatalogSeeder extends Seeder
             'calidad' => ['Calidad', 'select', null, 'general', true, true, ['Primera', 'Segunda', 'Tercera']],
             'madurez' => ['Madurez', 'select', null, 'general', false, false, ['Verde', 'Pintón', 'Maduro']],
             'presentacion_cosecha' => ['Presentación', 'select', null, 'comercial', false, false, ['Granel', 'Caja', 'Arpilla', 'Tonelada']],
-            'disponible_kg' => ['Disponibilidad', 'number', 'kg', 'comercial', true, true, null],
             'pedido_minimo' => ['Pedido mínimo', 'number', 'kg', 'comercial', false, false, null],
         ];
 
@@ -178,7 +177,6 @@ class CatalogSeeder extends Seeder
                     'lote' => ['Lote', 'text', null, 'general', false, false, null],
                     'extraccion' => ['Método de extracción', 'select', null, 'general', false, false, ['Centrífuga', 'Prensado']],
                     'presentacion_miel' => ['Presentación', 'select', null, 'comercial', true, false, ['Granel (tambo)', 'Cubeta', 'Frasco 1 kg', 'Frasco 500 g']],
-                    'disponible_kg' => ['Disponibilidad', 'number', 'kg', 'comercial', true, true, null, 0, 20000],
                     'pedido_minimo' => ['Pedido mínimo', 'number', 'kg', 'comercial', false, false, null],
                 ],
             ],
