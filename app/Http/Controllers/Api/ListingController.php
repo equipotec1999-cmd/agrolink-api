@@ -133,6 +133,7 @@ class ListingController extends Controller
 
         $disk = config('filesystems.default');
         $path = $request->file('photo')->store("listings/{$listing->id}", $disk);
+        abort_if($path === false, 502, 'No se pudo guardar la foto en el almacenamiento.');
 
         // getimagesize no siempre puede leer el archivo ya movido según el driver;
         // si falla, width/height quedan null en vez de inventar un valor.
