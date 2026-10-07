@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ConversationController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OfferController;
 use App\Http\Controllers\Api\OperationController;
 use Illuminate\Support\Facades\Route;
@@ -58,4 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Operaciones (Fase 5, bloque 3): lectura. Los cambios de estado llegan con pagos/entrega.
     Route::get('/operations', [OperationController::class, 'index']);
     Route::get('/operations/{operation}', [OperationController::class, 'show']);
+
+    // Notificaciones dentro de la app (Fase 5, bloque 4).
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])
+        ->whereUuid('id');
 });

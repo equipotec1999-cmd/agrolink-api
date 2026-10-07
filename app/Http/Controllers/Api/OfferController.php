@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Offer;
 use App\Models\Operation;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -40,7 +41,8 @@ class OfferController extends Controller
             "La cantidad ofertada supera la disponible ({$listing->cantidad} {$listing->unidad})."
         );
 
-        $message = DB::transaction(function () use ($request, $conversation, $me) {
+        $isCounter = false;
+        $message = DB::transaction(function () use ($request, $conversation, $me, &$isCounter) {
             // Serializa ofertas simultáneas de una misma conversación.
             Conversation::whereKey($conversation->id)->lockForUpdate()->first();
             Offer::expireStale($conversation->id);
@@ -49,6 +51,7 @@ class OfferController extends Controller
             if ($open) {
                 abort_if($open->remitente_id === $me, 422, 'Ya tienes una oferta abierta. Cancélala antes de enviar otra.');
                 $open->update(['estatus' => 'countered']);
+                $isCounter = true;
             }
 
             $offer = Offer::create([
@@ -70,6 +73,8 @@ class OfferController extends Controller
 
             return $message->load('offer');
         });
+
+        NotificationService::offerSent($conversation, $request->user(), $message->offer, $isCounter);
 
         return (new MessageResource($message))->response()->setStatusCode(201);
     }
@@ -126,6 +131,8 @@ class OfferController extends Controller
             return $locked->setRelation('operation', $operation);
         });
 
+        NotificationService::offerAnswered('offer_accepted', $result->conversation, $request->user(), $result, $result->operation->id);
+
         return new OfferResource($result);
     }
 
@@ -140,6 +147,8 @@ class OfferController extends Controller
             return $locked->load('operation');
         });
 
+        NotificationService::offerAnswered('offer_rejected', $result->conversation, $request->user(), $result);
+
         return new OfferResource($result);
     }
 
@@ -153,6 +162,8 @@ class OfferController extends Controller
 
             return $locked->load('operation');
         });
+
+        NotificationService::offerAnswered('offer_cancelled', $result->conversation, $request->user(), $result);
 
         return new OfferResource($result);
     }

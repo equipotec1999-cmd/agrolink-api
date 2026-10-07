@@ -8,6 +8,7 @@ use App\Http\Resources\ConversationResource;
 use App\Http\Resources\MessageResource;
 use App\Http\Resources\OfferResource;
 use App\Models\Offer;
+use App\Services\NotificationService;
 use App\Models\Conversation;
 use App\Models\Listing;
 use App\Models\Message;
@@ -134,6 +135,8 @@ class ConversationController extends Controller
 
             return $message;
         });
+
+        NotificationService::messageSent($conversation, $request->user(), $message->cuerpo);
 
         return (new MessageResource($message))->response()->setStatusCode(201);
     }
