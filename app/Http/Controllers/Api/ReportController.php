@@ -25,14 +25,14 @@ class ReportController extends Controller
         ]);
 
         $me = $request->user()->id;
-        abort_unless($listing->estatus === 'published', 404);
+        abort_unless($listing->estatus === 'publicada', 404);
         abort_if($listing->usuario_id === $me, 422, 'No puedes reportar tu propia publicación.');
 
         $alreadyOpen = Report::query()
             ->where('reportante_id', $me)
             ->where('reportable_tipo', 'listing')
             ->where('reportable_id', $listing->id)
-            ->whereIn('estatus', ['open', 'investigating'])
+            ->whereIn('estatus', ['abierto', 'investigating'])
             ->exists();
         abort_if($alreadyOpen, 422, 'Ya reportaste esta publicación; un moderador la está revisando.');
 
@@ -42,7 +42,7 @@ class ReportController extends Controller
             'reportable_id' => $listing->id,
             'motivo' => $data['reason'],
             'descripcion' => $data['description'] ?? null,
-            'estatus' => 'open',
+            'estatus' => 'abierto',
         ]);
 
         return response()->json(['data' => ['id' => $report->id]], 201);

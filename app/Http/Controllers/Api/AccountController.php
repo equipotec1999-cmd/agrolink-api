@@ -61,7 +61,7 @@ class AccountController extends Controller
         }
 
         return response()->json(['data' => [
-            'listings' => Listing::where('usuario_id', $user->id)->where('estatus', 'published')->count(),
+            'listings' => Listing::where('usuario_id', $user->id)->where('estatus', 'publicada')->count(),
             'sales' => Operation::where('vendedor_id', $user->id)->where('estatus', '!=', 'cancelado')->count(),
             'purchases' => Operation::where('comprador_id', $user->id)->where('estatus', '!=', 'cancelado')->count(),
             'rating' => $rating,

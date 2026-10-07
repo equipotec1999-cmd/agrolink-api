@@ -16,7 +16,7 @@ class StoreListingMediaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ];
     }
 }

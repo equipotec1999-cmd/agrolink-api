@@ -34,7 +34,7 @@ class VerificationController extends Controller
                 'id' => $last->id,
                 'status' => $last->estatus,
                 'business_name' => $last->nombre_negocio,
-                'rejection_reason' => $last->estatus === 'rejected' ? $last->motivo_rechazo : null,
+                'rejection_reason' => $last->estatus === 'rechazada' ? $last->motivo_rechazo : null,
                 'created_at' => $last->creado_en,
             ] : null,
         ]]);
@@ -54,7 +54,7 @@ class VerificationController extends Controller
         ]);
 
         abort_if(
-            VerificationRequest::where('usuario_id', $user->id)->where('estatus', 'pending')->exists(),
+            VerificationRequest::where('usuario_id', $user->id)->where('estatus', 'pendiente')->exists(),
             422,
             'Ya tienes una solicitud en revisión.'
         );
@@ -66,7 +66,7 @@ class VerificationController extends Controller
             $req = DB::transaction(function () use ($request, $user, $data, $disk, &$stored) {
                 $req = VerificationRequest::create([
                     'usuario_id' => $user->id,
-                    'estatus' => 'pending',
+                    'estatus' => 'pendiente',
                     'nombre_negocio' => $data['business_name'] ?? null,
                 ]);
 
@@ -104,7 +104,7 @@ class VerificationController extends Controller
             throw $e;
         }
 
-        return response()->json(['data' => ['id' => $req->id, 'status' => 'pending']], 201);
+        return response()->json(['data' => ['id' => $req->id, 'status' => 'pendiente']], 201);
     }
 
     private function discard(string $disk, array $paths): void

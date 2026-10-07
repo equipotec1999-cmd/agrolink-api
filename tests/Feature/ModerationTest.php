@@ -17,8 +17,8 @@ class ModerationTest extends ApiTestCase
     {
         $owner = $this->makeUser('vendedor');
         $sinRevisar = $this->makeListing($owner);
-        $reenviada = $this->makeListing($owner, ['estatus' => 'pending_review']);
-        $aprobada = $this->makeListing($owner, ['estatus_moderacion' => 'approved']);
+        $reenviada = $this->makeListing($owner, ['estatus' => 'en_revision']);
+        $aprobada = $this->makeListing($owner, ['estatus_moderacion' => 'aprobada']);
 
         $ids = collect($this->as($this->makeUser('moderador'))->getJson('/api/moderation/listings')->assertOk()->json('data'))->pluck('id');
 
@@ -37,7 +37,7 @@ class ModerationTest extends ApiTestCase
             ->assertNoContent();
 
         $listing->refresh();
-        $this->assertSame('rejected', $listing->estatus);
+        $this->assertSame('rechazada', $listing->estatus);
         $this->assertSame('Fotos que no corresponden', $listing->motivo_moderacion);
 
         $mine = $this->as($owner)->getJson('/api/my/listings')->assertOk();
@@ -67,27 +67,27 @@ class ModerationTest extends ApiTestCase
     public function test_reenviar_solo_rechazadas_o_suspendidas_y_solo_el_dueno(): void
     {
         $owner = $this->makeUser('vendedor');
-        $rechazada = $this->makeListing($owner, ['estatus' => 'rejected', 'estatus_moderacion' => 'rejected']);
+        $rechazada = $this->makeListing($owner, ['estatus' => 'rechazada', 'estatus_moderacion' => 'rechazada']);
         $publicada = $this->makeListing($owner);
 
         $this->as($this->makeUser('vendedor'))->postJson("/api/listings/{$rechazada->id}/resubmit")->assertForbidden();
 
         $this->as($owner)->postJson("/api/listings/{$publicada->id}/resubmit")->assertUnprocessable();
         $this->postJson("/api/listings/{$rechazada->id}/resubmit")->assertOk();
-        $this->assertSame('pending_review', $rechazada->fresh()->estatus);
+        $this->assertSame('en_revision', $rechazada->fresh()->estatus);
     }
 
     public function test_aprobar_una_reenviada_la_vuelve_visible_y_limpia_el_motivo(): void
     {
         $listing = $this->makeListing($this->makeUser('vendedor'), [
-            'estatus' => 'pending_review', 'estatus_moderacion' => 'pending', 'motivo_moderacion' => 'antes mal',
+            'estatus' => 'en_revision', 'estatus_moderacion' => 'pendiente', 'motivo_moderacion' => 'antes mal',
         ]);
 
         $this->as($this->makeUser('moderador'))->postJson("/api/moderation/listings/{$listing->id}/approve")->assertNoContent();
 
         $listing->refresh();
-        $this->assertSame('published', $listing->estatus);
-        $this->assertSame('approved', $listing->estatus_moderacion);
+        $this->assertSame('publicada', $listing->estatus);
+        $this->assertSame('aprobada', $listing->estatus_moderacion);
         $this->assertNull($listing->motivo_moderacion);
     }
 
@@ -112,19 +112,19 @@ class ModerationTest extends ApiTestCase
         foreach ([$this->makeUser(), $this->makeUser()] as $reporter) {
             $this->as($reporter)->postJson("/api/listings/{$listing->id}/report", ['reason' => 'fraude'])->assertCreated();
         }
-        $this->assertSame(2, Report::where('estatus', 'open')->count());
+        $this->assertSame(2, Report::where('estatus', 'abierto')->count());
 
         $reportId = Report::first()->id;
         $this->as($this->makeUser('moderador'))
-            ->postJson("/api/moderation/reports/{$reportId}/resolve", ['action' => 'hide_listing', 'note' => 'Sin pruebas'])
+            ->postJson("/api/moderation/reports/{$reportId}/resolve", ['action' => 'ocultar_publicacion', 'note' => 'Sin pruebas'])
             ->assertNoContent();
 
         $this->assertSame('suspended', $listing->fresh()->estatus);
-        $this->assertSame(0, Report::where('estatus', 'open')->count());
+        $this->assertSame(0, Report::where('estatus', 'abierto')->count());
         $this->assertSame(1, $this->as($owner)->getJson('/api/notifications')->json('unread_count'));
 
         $this->as($this->makeUser('moderador'))
-            ->postJson("/api/moderation/reports/{$reportId}/resolve", ['action' => 'dismiss'])
+            ->postJson("/api/moderation/reports/{$reportId}/resolve", ['action' => 'descartar'])
             ->assertUnprocessable();
     }
 
@@ -134,9 +134,9 @@ class ModerationTest extends ApiTestCase
         $this->as($this->makeUser())->postJson("/api/listings/{$listing->id}/report", ['reason' => 'otro'])->assertCreated();
 
         $this->as($this->makeUser('moderador'))
-            ->postJson('/api/moderation/reports/'.Report::first()->id.'/resolve', ['action' => 'dismiss'])
+            ->postJson('/api/moderation/reports/'.Report::first()->id.'/resolve', ['action' => 'descartar'])
             ->assertNoContent();
 
-        $this->assertSame('published', $listing->fresh()->estatus);
+        $this->assertSame('publicada', $listing->fresh()->estatus);
     }
 }

@@ -65,8 +65,8 @@ abstract class ApiTestCase extends TestCase
             'unidad' => 'cabezas',
             'modalidad_venta' => 'individual',
             'negociable' => true,
-            'estatus' => 'published',
-            'estatus_moderacion' => 'pending',
+            'estatus' => 'publicada',
+            'estatus_moderacion' => 'pendiente',
             'publicado_en' => now(),
             'vence_en' => now()->addDays(30),
         ]);

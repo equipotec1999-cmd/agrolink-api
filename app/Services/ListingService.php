@@ -33,8 +33,8 @@ class ListingService
                 'unidad' => $data['unit'],
                 'modalidad_venta' => $data['sale_mode'] ?? 'individual',
                 'negociable' => $data['negotiable'] ?? false,
-                'estatus' => 'draft',
-                'estatus_moderacion' => 'pending',
+                'estatus' => 'borrador',
+                'estatus_moderacion' => 'pendiente',
             ]);
 
             $this->syncAttributes($listing, $data['attributes'] ?? []);
@@ -79,13 +79,13 @@ class ListingService
 
     /**
      * Publica el listing: status -> published (se ve ya, Fase 1 §5 "publicar primero,
-     * aprobar después"). moderation_status NO se toca aquí; sigue 'pending' hasta que
+     * aprobar después"). moderation_status NO se toca aquí; sigue 'pendiente' hasta que
      * moderación lo revise (Fase 6). expires_at usa el default del tipo de producto.
      */
     public function publish(Listing $listing): Listing
     {
         $listing->update([
-            'estatus' => 'published',
+            'estatus' => 'publicada',
             'publicado_en' => now(),
             'vence_en' => now()->addDays($listing->productType->dias_vigencia_predeterminados),
         ]);
@@ -95,7 +95,7 @@ class ListingService
 
     public function archive(Listing $listing): Listing
     {
-        $listing->update(['estatus' => 'archived']);
+        $listing->update(['estatus' => 'archivada']);
 
         return $listing;
     }

@@ -26,7 +26,7 @@ class ChatOfferTest extends ApiTestCase
 
     public function test_no_se_puede_escribir_en_una_publicacion_no_publicada(): void
     {
-        $listing = $this->makeListing($this->makeUser('vendedor'), ['estatus' => 'draft']);
+        $listing = $this->makeListing($this->makeUser('vendedor'), ['estatus' => 'borrador']);
 
         $this->as($this->makeUser())->postJson("/api/listings/{$listing->id}/conversation")->assertNotFound();
     }
@@ -78,9 +78,9 @@ class ChatOfferTest extends ApiTestCase
 
         $this->as($seller)->postJson("/api/conversations/$id/offers", ['amount' => 1300, 'quantity' => 2])->assertCreated();
 
-        $this->assertDatabaseHas('ofertas', ['conversacion_id' => $id, 'estatus' => 'countered']);
-        $this->assertDatabaseHas('ofertas', ['conversacion_id' => $id, 'estatus' => 'sent', 'monto' => 1300]);
-        $this->assertSame(1, \App\Models\Offer::where('estatus', 'sent')->count());
+        $this->assertDatabaseHas('ofertas', ['conversacion_id' => $id, 'estatus' => 'contraoferta']);
+        $this->assertDatabaseHas('ofertas', ['conversacion_id' => $id, 'estatus' => 'enviada', 'monto' => 1300]);
+        $this->assertSame(1, \App\Models\Offer::where('estatus', 'enviada')->count());
     }
 
     public function test_aceptar_crea_la_operacion_con_el_total(): void
@@ -97,7 +97,7 @@ class ChatOfferTest extends ApiTestCase
 
         $this->as($seller)->postJson("/api/offers/{$offer->id}/accept")->assertOk();
 
-        $this->assertSame('accepted', $offer->fresh()->estatus);
+        $this->assertSame('aceptada', $offer->fresh()->estatus);
         $this->assertDatabaseHas('operaciones', [
             'oferta_id' => $offer->id,
             'comprador_id' => $buyer->id,
@@ -123,7 +123,7 @@ class ChatOfferTest extends ApiTestCase
         $this->as($seller)->postJson("/api/offers/{$offer->id}/cancel")->assertForbidden();
 
         $this->postJson("/api/offers/{$offer->id}/reject")->assertOk();
-        $this->assertSame('rejected', $offer->fresh()->estatus);
+        $this->assertSame('rechazada', $offer->fresh()->estatus);
     }
 
     public function test_ofertas_de_otra_conversacion_no_se_pueden_tocar(): void

@@ -37,7 +37,7 @@ class ListingController extends Controller
                     DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
                 ]),
             ])
-            ->where('estatus', 'published');
+            ->where('estatus', 'publicada');
 
         if ($request->filled('product_type_id')) {
             $query->where('tipo_producto_id', $request->integer('product_type_id'));
@@ -86,9 +86,9 @@ class ListingController extends Controller
     public function resubmit(Request $request, Listing $listing)
     {
         $this->authorize('publish', $listing);
-        abort_unless(in_array($listing->estatus, ['rejected', 'suspended'], true), 422, 'Solo se pueden reenviar publicaciones rechazadas o suspendidas.');
+        abort_unless(in_array($listing->estatus, ['rechazada', 'suspended'], true), 422, 'Solo se pueden reenviar publicaciones rechazadas o suspendidas.');
 
-        $listing->update(['estatus' => 'pending_review', 'estatus_moderacion' => 'pending']);
+        $listing->update(['estatus' => 'en_revision', 'estatus_moderacion' => 'pendiente']);
 
         return new ListingResource($listing->load(['productType', 'user.sellerProfile', 'media']));
     }
@@ -102,7 +102,7 @@ class ListingController extends Controller
 
     public function show(Listing $listing)
     {
-        abort_unless($listing->estatus === 'published' || $listing->usuario_id === request()->user()?->id, 404);
+        abort_unless($listing->estatus === 'publicada' || $listing->usuario_id === request()->user()?->id, 404);
 
         $listing->load([
             'productType',
@@ -165,15 +165,15 @@ class ListingController extends Controller
         $this->authorize('update', $listing);
 
         $disk = config('filesystems.default');
-        $path = $request->file('photo')->store("listings/{$listing->id}", $disk);
+        $path = $request->file('foto')->store("listings/{$listing->id}", $disk);
         abort_if($path === false, 502, 'No se pudo guardar la foto en el almacenamiento.');
 
         // getimagesize no siempre puede leer el archivo ya movido según el driver;
         // si falla, width/height quedan null en vez de inventar un valor.
-        $dimensions = @getimagesize($request->file('photo')->getRealPath());
+        $dimensions = @getimagesize($request->file('foto')->getRealPath());
 
         $media = $listing->media()->create([
-            'tipo' => 'photo',
+            'tipo' => 'foto',
             'ruta_almacenamiento' => $path,
             'posicion' => $listing->media()->count(),
             'ancho' => $dimensions[0] ?? null,

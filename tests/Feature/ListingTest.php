@@ -55,7 +55,7 @@ class ListingTest extends ApiTestCase
     {
         $r = $this->as($this->makeUser())->postJson('/api/listings', $this->payload())->assertCreated();
 
-        $r->assertJsonPath('data.status', 'draft')->assertJsonPath('data.location.municipality', 'Tizimín');
+        $r->assertJsonPath('data.status', 'borrador')->assertJsonPath('data.location.municipality', 'Tizimín');
 
         $lat = $r->json('data.location.approx_lat');
         $this->assertIsFloat($lat);
@@ -97,7 +97,7 @@ class ListingTest extends ApiTestCase
 
         $borrador = $this->postJson('/api/listings', $this->payload(['title' => 'Borrador oculto']))->json('data.id');
         $publicada = $this->postJson('/api/listings', $this->payload(['title' => 'Publicada visible']))->json('data.id');
-        $this->postJson("/api/listings/$publicada/publish")->assertOk()->assertJsonPath('data.status', 'published');
+        $this->postJson("/api/listings/$publicada/publish")->assertOk()->assertJsonPath('data.status', 'publicada');
 
         $ids = collect($this->getJson('/api/listings')->assertOk()->json('data'))->pluck('id');
         $this->assertTrue($ids->contains($publicada));
@@ -115,7 +115,7 @@ class ListingTest extends ApiTestCase
 
         $this->as($owner)->patchJson("/api/listings/$id", ['title' => 'Nuevo título', 'price' => 99])
             ->assertOk()->assertJsonPath('data.title', 'Nuevo título');
-        $this->postJson("/api/listings/$id/archive")->assertOk()->assertJsonPath('data.status', 'archived');
+        $this->postJson("/api/listings/$id/archive")->assertOk()->assertJsonPath('data.status', 'archivada');
         $this->deleteJson("/api/listings/$id")->assertOk();
         $this->assertSoftDeleted('publicaciones', ['id' => $id], null, 'eliminado_en');
     }

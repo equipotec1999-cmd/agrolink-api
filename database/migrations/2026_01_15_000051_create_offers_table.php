@@ -14,8 +14,8 @@ return new class extends Migration
             $table->foreignId('remitente_id')->constrained('usuarios')->cascadeOnDelete();
             $table->decimal('monto', 14, 2);
             $table->decimal('cantidad', 12, 2)->default(1);
-            $table->enum('estatus', ['sent', 'accepted', 'rejected', 'countered', 'cancelled', 'expired'])
-                ->default('sent');
+            $table->enum('estatus', ['enviada', 'aceptada', 'rechazada', 'contraoferta', 'cancelled', 'vencida'])
+                ->default('enviada');
             $table->timestamp('vence_en')->nullable();
             $table->timestamp('creado_en')->nullable();
             $table->timestamp('actualizado_en')->nullable();

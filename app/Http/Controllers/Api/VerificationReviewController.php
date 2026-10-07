@@ -34,7 +34,7 @@ class VerificationReviewController extends Controller
     {
         $items = VerificationRequest::query()
             ->with(['user:id,nombre,correo', 'documents'])
-            ->where('estatus', 'pending')
+            ->where('estatus', 'pendiente')
             ->orderBy('id')
             ->limit(50)
             ->get()
@@ -64,11 +64,11 @@ class VerificationReviewController extends Controller
 
     public function approve(Request $request, VerificationRequest $verification)
     {
-        abort_unless($verification->estatus === 'pending', 422, 'Esta solicitud ya fue revisada.');
+        abort_unless($verification->estatus === 'pendiente', 422, 'Esta solicitud ya fue revisada.');
 
         DB::transaction(function () use ($request, $verification) {
             $verification->update([
-                'estatus' => 'approved',
+                'estatus' => 'aprobada',
                 'revisado_por' => $request->user()->id,
                 'revisado_en' => now(),
                 'motivo_rechazo' => null,
@@ -91,11 +91,11 @@ class VerificationReviewController extends Controller
     public function reject(Request $request, VerificationRequest $verification)
     {
         $data = $request->validate(['reason' => ['required', 'string', 'min:3', 'max:300']]);
-        abort_unless($verification->estatus === 'pending', 422, 'Esta solicitud ya fue revisada.');
+        abort_unless($verification->estatus === 'pendiente', 422, 'Esta solicitud ya fue revisada.');
 
         DB::transaction(function () use ($request, $verification, $data) {
             $verification->update([
-                'estatus' => 'rejected',
+                'estatus' => 'rechazada',
                 'revisado_por' => $request->user()->id,
                 'revisado_en' => now(),
                 'motivo_rechazo' => $data['reason'],

@@ -101,7 +101,7 @@ class AuthTest extends ApiTestCase
         $seller = $this->makeUser('vendedor');
         $buyer = $this->makeUser();
         $this->makeListing($seller);
-        $this->makeListing($seller, ['estatus' => 'draft']);
+        $this->makeListing($seller, ['estatus' => 'borrador']);
 
         $this->as($seller)->getJson('/api/me/stats')->assertOk()
             ->assertJsonPath('data.listings', 1)

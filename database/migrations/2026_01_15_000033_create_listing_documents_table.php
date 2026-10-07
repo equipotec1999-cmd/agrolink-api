@@ -13,8 +13,8 @@ return new class extends Migration
             $table->foreignId('publicacion_id')->constrained('publicaciones')->cascadeOnDelete();
             $table->string('nombre', 180);
             $table->string('ruta_almacenamiento');
-            $table->enum('estatus', ['pending', 'verified', 'rejected', 'expired', 'not_applicable'])
-                ->default('pending');
+            $table->enum('estatus', ['pendiente', 'verified', 'rechazada', 'vencida', 'not_applicable'])
+                ->default('pendiente');
             $table->string('nota', 255)->nullable();
             // Quién lo revisó: nunca se auto-aprueba un documento subido (Fase 1 §8).
             $table->foreignId('revisado_por')->nullable()->constrained('usuarios')->nullOnDelete();

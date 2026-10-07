@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('medios_publicacion', function (Blueprint $table) {
             $table->id();
             $table->foreignId('publicacion_id')->constrained('publicaciones')->cascadeOnDelete();
-            $table->enum('tipo', ['photo', 'video'])->default('photo');
+            $table->enum('tipo', ['foto', 'video'])->default('foto');
             // Solo la clave del archivo en S3/R2; la BD nunca guarda binarios (Fase 1 §16).
             $table->string('ruta_almacenamiento');
             $table->unsignedSmallInteger('posicion')->default(0);

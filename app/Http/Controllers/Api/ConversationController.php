@@ -65,7 +65,7 @@ class ConversationController extends Controller
     {
         $me = $request->user();
 
-        abort_unless($listing->estatus === 'published', 404);
+        abort_unless($listing->estatus === 'publicada', 404);
         abort_if($listing->usuario_id === $me->id, 422, 'No puedes escribirte a ti mismo en tu propia publicación.');
 
         $attributes = ['publicacion_id' => $listing->id, 'comprador_id' => $me->id];

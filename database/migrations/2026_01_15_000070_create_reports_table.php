@@ -19,7 +19,7 @@ return new class extends Migration
                 'publicacion_duplicada', 'conducta_inapropiada', 'producto_no_permitido', 'otro',
             ]);
             $table->string('descripcion', 500)->nullable();
-            $table->enum('estatus', ['open', 'investigating', 'resolved', 'dismissed'])->default('open');
+            $table->enum('estatus', ['abierto', 'investigating', 'resuelto', 'dismissed'])->default('abierto');
             $table->foreignId('resuelto_por')->nullable()->constrained('usuarios')->nullOnDelete();
             $table->timestamp('resuelto_en')->nullable();
             $table->string('nota_resolucion', 500)->nullable();

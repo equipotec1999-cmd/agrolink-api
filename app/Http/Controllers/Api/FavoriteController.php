@@ -25,7 +25,7 @@ class FavoriteController extends Controller
                     DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
                 ]),
             ])
-            ->where('publicaciones.estatus', 'published')
+            ->where('publicaciones.estatus', 'publicada')
             ->join('favoritos', 'favoritos.publicacion_id', '=', 'publicaciones.id')
             ->where('favoritos.usuario_id', $request->user()->id)
             ->orderByDesc('favoritos.creado_en')
@@ -39,7 +39,7 @@ class FavoriteController extends Controller
     public function ids(Request $request)
     {
         $ids = $request->user()->favorites()
-            ->whereHas('listing', fn ($q) => $q->where('estatus', 'published'))
+            ->whereHas('listing', fn ($q) => $q->where('estatus', 'publicada'))
             ->pluck('publicacion_id');
 
         return response()->json(['data' => $ids]);
@@ -48,7 +48,7 @@ class FavoriteController extends Controller
     /** Idempotente: guardar dos veces el mismo listing no falla ni duplica. */
     public function store(Request $request, Listing $listing)
     {
-        abort_unless($listing->estatus === 'published', 404);
+        abort_unless($listing->estatus === 'publicada', 404);
 
         $request->user()->favorites()->firstOrCreate(['publicacion_id' => $listing->id]);
 

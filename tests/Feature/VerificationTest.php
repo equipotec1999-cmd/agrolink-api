@@ -33,12 +33,12 @@ class VerificationTest extends ApiTestCase
     {
         $user = $this->makeUser();
 
-        $this->submit($user)->assertCreated()->assertJsonPath('data.status', 'pending');
+        $this->submit($user)->assertCreated()->assertJsonPath('data.status', 'pendiente');
 
         $this->assertDatabaseCount('documentos_verificacion', 2);
         $this->getJson('/api/verification')->assertOk()
             ->assertJsonPath('data.is_verified', false)
-            ->assertJsonPath('data.request.status', 'pending');
+            ->assertJsonPath('data.request.status', 'pendiente');
 
         foreach (\App\Models\VerificationDocument::all() as $doc) {
             Storage::disk(config('filesystems.default'))->assertExists($doc->ruta_almacenamiento);
@@ -125,7 +125,7 @@ class VerificationTest extends ApiTestCase
         $this->postJson("/api/moderation/verifications/{$req->id}/reject", ['reason' => 'INE ilegible'])->assertNoContent();
 
         $this->as($user)->getJson('/api/verification')
-            ->assertJsonPath('data.request.status', 'rejected')
+            ->assertJsonPath('data.request.status', 'rechazada')
             ->assertJsonPath('data.request.rejection_reason', 'INE ilegible')
             ->assertJsonPath('data.is_verified', false);
 

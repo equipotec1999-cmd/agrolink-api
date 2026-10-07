@@ -34,7 +34,7 @@ class OfferController extends Controller
         $me = $request->user()->id;
         $listing = $conversation->listing;
 
-        abort_unless($listing->estatus === 'published', 422, 'Esta publicación ya no está disponible.');
+        abort_unless($listing->estatus === 'publicada', 422, 'Esta publicación ya no está disponible.');
         abort_if(
             (float) $request->validated('quantity') > (float) $listing->cantidad,
             422,
@@ -47,10 +47,10 @@ class OfferController extends Controller
             Conversation::whereKey($conversation->id)->lockForUpdate()->first();
             Offer::expireStale($conversation->id);
 
-            $open = Offer::where('conversacion_id', $conversation->id)->where('estatus', 'sent')->first();
+            $open = Offer::where('conversacion_id', $conversation->id)->where('estatus', 'enviada')->first();
             if ($open) {
                 abort_if($open->remitente_id === $me, 422, 'Ya tienes una oferta abierta. Cancélala antes de enviar otra.');
-                $open->update(['estatus' => 'countered']);
+                $open->update(['estatus' => 'contraoferta']);
                 $isCounter = true;
             }
 
@@ -59,7 +59,7 @@ class OfferController extends Controller
                 'remitente_id' => $me,
                 'monto' => $request->validated('amount'),
                 'cantidad' => $request->validated('quantity'),
-                'estatus' => 'sent',
+                'estatus' => 'enviada',
                 'vence_en' => now()->addHours(Offer::VIGENCIA_HORAS),
             ]);
 
@@ -86,11 +86,11 @@ class OfferController extends Controller
         $this->participant($request, $locked->conversation);
 
         // Vence aquí mismo si ya pasó su plazo.
-        if ($locked->estatus === 'sent' && $locked->vence_en?->isPast()) {
-            $locked->update(['estatus' => 'expired']);
+        if ($locked->estatus === 'enviada' && $locked->vence_en?->isPast()) {
+            $locked->update(['estatus' => 'vencida']);
         }
 
-        abort_unless($locked->estatus === 'sent', 422, 'Esta oferta ya no está disponible.');
+        abort_unless($locked->estatus === 'enviada', 422, 'Esta oferta ya no está disponible.');
 
         return $locked;
     }
@@ -104,9 +104,9 @@ class OfferController extends Controller
 
             $conversation = $locked->conversation;
             $listing = $conversation->listing;
-            abort_unless($listing->estatus === 'published', 422, 'Esta publicación ya no está disponible.');
+            abort_unless($listing->estatus === 'publicada', 422, 'Esta publicación ya no está disponible.');
 
-            $locked->update(['estatus' => 'accepted']);
+            $locked->update(['estatus' => 'aceptada']);
 
             $operation = Operation::create([
                 'oferta_id' => $locked->id,
@@ -142,7 +142,7 @@ class OfferController extends Controller
         $result = DB::transaction(function () use ($request, $offer) {
             $locked = $this->lockedOffer($request, $offer);
             abort_if($locked->remitente_id === $request->user()->id, 403, 'No puedes rechazar tu propia oferta; cancélala.');
-            $locked->update(['estatus' => 'rejected']);
+            $locked->update(['estatus' => 'rechazada']);
 
             return $locked->load('operation');
         });

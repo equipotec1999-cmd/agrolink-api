@@ -29,13 +29,13 @@ return new class extends Migration
             $table->boolean('negociable')->default(false);
             // Estado de publicación (visibilidad) — independiente de moderation_status.
             $table->enum('estatus', [
-                'draft', 'pending_review', 'published', 'rejected',
-                'suspended', 'sold', 'expired', 'archived',
-            ])->default('draft');
+                'borrador', 'en_revision', 'publicada', 'rechazada',
+                'suspended', 'sold', 'vencida', 'archivada',
+            ])->default('borrador');
             // Moderación (confianza) — confirmado 25/sep: SE PUBLICA primero y se revisa
-            // después ("no es lo mismo revisar que aprobar"); 'rejected' aquí no oculta
+            // después ("no es lo mismo revisar que aprobar"); 'rechazada' aquí no oculta
             // la publicación por sí solo, pero dispara alerta y puede llevar a status=rejected.
-            $table->enum('estatus_moderacion', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->enum('estatus_moderacion', ['pendiente', 'aprobada', 'rechazada'])->default('pendiente');
             // Copia desnormalizada de listing_attribute_values para filtrar rápido sin JOIN.
             $table->jsonb('atributos_cache')->default('{}');
             $table->timestamp('publicado_en')->nullable();

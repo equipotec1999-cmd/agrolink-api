@@ -13,7 +13,7 @@ return new class extends Migration
         Schema::create('solicitudes_verificacion', function (Blueprint $table) {
             $table->id();
             $table->foreignId('usuario_id')->constrained('usuarios')->cascadeOnDelete();
-            $table->string('estatus', 20)->default('pending'); // pending | approved | rejected
+            $table->string('estatus', 20)->default('pendiente'); // pending | approved | rejected
             $table->string('nombre_negocio', 150)->nullable();
             $table->text('motivo_rechazo')->nullable();
             $table->foreignId('revisado_por')->nullable()->constrained('usuarios')->nullOnDelete();
@@ -25,7 +25,7 @@ return new class extends Migration
         });
 
         // Una sola solicitud pendiente por persona (aunque se toque dos veces "enviar").
-        DB::statement("CREATE UNIQUE INDEX solicitudes_verificacion_una_pendiente ON solicitudes_verificacion (usuario_id) WHERE estatus = 'pending'");
+        DB::statement("CREATE UNIQUE INDEX solicitudes_verificacion_una_pendiente ON solicitudes_verificacion (usuario_id) WHERE estatus = 'pendiente'");
 
         // Los archivos viven en el almacenamiento (nunca en la base); aquí solo su ruta.
         Schema::create('documentos_verificacion', function (Blueprint $table) {

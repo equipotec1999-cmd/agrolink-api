@@ -35,10 +35,10 @@ class Offer extends Modelo
     public static function expireStale(?int $conversationId = null): void
     {
         static::query()
-            ->where('estatus', 'sent')
+            ->where('estatus', 'enviada')
             ->where('vence_en', '<', now())
             ->when($conversationId, fn ($q) => $q->where('conversacion_id', $conversationId))
-            ->update(['estatus' => 'expired']);
+            ->update(['estatus' => 'vencida']);
     }
 
     public function conversation(): BelongsTo
