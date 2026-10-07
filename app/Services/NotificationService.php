@@ -6,6 +6,7 @@ use App\Models\Conversation;
 use App\Models\Offer;
 use App\Models\User;
 use App\Models\UserNotification;
+use App\Support\NotificationText;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -30,6 +31,7 @@ class NotificationService
 
                 if ($existing) {
                     $existing->update(['datos' => $data, 'creado_en' => now()]);
+                    self::push($userId, $type, $data);
 
                     return;
                 }
@@ -42,9 +44,20 @@ class NotificationService
                 'notificable_id' => $userId,
                 'datos' => $data,
             ]);
+            self::push($userId, $type, $data);
         } catch (Throwable $e) {
             report($e);
         }
+    }
+
+    /** Push al celular, DESPUÉS de responder al usuario (no hace esperar la petición). */
+    private static function push(int $userId, string $type, array $data): void
+    {
+        [$title, $body] = NotificationText::render($type, $data);
+        app()->terminating(fn () => PushService::toUser($userId, $title, $body, [
+            'type' => $type,
+            'conversation_id' => $data['conversation_id'] ?? '',
+        ]));
     }
 
     private static function base(Conversation $c, User $actor): array

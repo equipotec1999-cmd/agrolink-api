@@ -456,3 +456,17 @@ Vendedores que sigue cada usuario. *(antes: `followed_sellers`)*
 | `usuario_id` | entero grande | no | `user_id` |
 | `vendedor_id` | entero grande | no | `seller_id` |
 | `creado_en` | fecha y hora | sí | `created_at` |
+
+## `tokens_dispositivo`
+
+Token de notificaciones push (Firebase) de cada celular con sesión. *(tabla nueva)*
+
+| Columna | Tipo | Nulo | Antes |
+|---|---|---|---|
+| `id` | entero grande | no | — |
+| `usuario_id` | entero grande | no | — |
+| `token` | texto largo (único) | no | — |
+| `plataforma` | texto | no | — |
+| `ultimo_uso_en` | fecha y hora | sí | — |
+| `creado_en` | fecha y hora | sí | — |
+| `actualizado_en` | fecha y hora | sí | — |

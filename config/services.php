@@ -24,6 +24,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Push (FCM). Credenciales de la cuenta de servicio en base64, en UNA línea.
+    'firebase' => [
+        'credentials_base64' => env('FIREBASE_CREDENTIALS_BASE64'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],

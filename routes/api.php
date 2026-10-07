@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\NotificationController;
@@ -65,4 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])
         ->whereUuid('id');
+
+    // Push (Fase 5, bloque 5): token FCM del celular.
+    Route::post('/devices', [DeviceController::class, 'store']);
+    Route::post('/devices/unregister', [DeviceController::class, 'destroy']);
 });
