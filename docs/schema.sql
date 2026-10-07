@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 6VGZj91gQI0rrzSPXEeAU3YlzsUUfos5FucyPLAeAOTv7Eho1hwgJTteLEPtU6v
+\restrict NShsEHrKNdV5OhIOgXTCjNVR1we2gZkQgBIjHw01rLE9hBJ4lXul1k11YnhyQDF
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -1374,7 +1374,7 @@ CREATE TABLE public.ubicaciones_publicacion (
 CREATE TABLE public.usuarios (
     id bigint NOT NULL,
     nombre character varying(255) NOT NULL,
-    correo character varying(255) NOT NULL,
+    correo character varying(255),
     telefono character varying(20),
     correo_verificado_en timestamp(0) without time zone,
     contrasena character varying(255) NOT NULL,
@@ -2418,6 +2418,13 @@ CREATE INDEX ubicaciones_publicacion_aprox_gix ON public.ubicaciones_publicacion
 
 
 --
+-- Name: usuarios_telefono_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX usuarios_telefono_unique ON public.usuarios USING btree (telefono) WHERE (telefono IS NOT NULL);
+
+
+--
 -- Name: vap_atributo_numero_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2868,5 +2875,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 6VGZj91gQI0rrzSPXEeAU3YlzsUUfos5FucyPLAeAOTv7Eho1hwgJTteLEPtU6v
+\unrestrict NShsEHrKNdV5OhIOgXTCjNVR1we2gZkQgBIjHw01rLE9hBJ4lXul1k11YnhyQDF
 
