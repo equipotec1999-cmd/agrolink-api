@@ -40,8 +40,17 @@ class ListingService
             $this->syncAttributes($listing, $data['attributes'] ?? []);
             $this->syncLocation($listing, $data);
 
-            return $listing->fresh(['productType', 'user.sellerProfile', 'location']);
+            return $listing->fresh(['productType', 'user.sellerProfile', 'location' => $this->approxLocation()]);
         });
+    }
+
+    /** Ubicación pública: solo el punto aproximado (nunca el exacto). */
+    private function approxLocation(): \Closure
+    {
+        return fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
+            DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
+            DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
+        ]);
     }
 
     public function update(Listing $listing, array $data): Listing
@@ -64,7 +73,7 @@ class ListingService
                 $this->syncAttributes($listing, $data['attributes']);
             }
 
-            return $listing->fresh(['productType', 'user.sellerProfile', 'location']);
+            return $listing->fresh(['productType', 'user.sellerProfile', 'location' => $this->approxLocation()]);
         });
     }
 

@@ -53,12 +53,15 @@ class TwoFactorTest extends ApiTestCase
         $this->assertArrayNotHasKey('token', $login->json());
 
         $pending = $login->json('challenge_token');
+        $this->app['auth']->forgetGuards(); // la prueba ya usó actingAs: que el token mande
         $this->withToken($pending)->getJson('/api/me')->assertForbidden();
+        $this->app['auth']->forgetGuards();
 
         // El código ya usado al activar no sirve de nuevo; el del siguiente intervalo sí.
         $this->withToken($pending)->postJson('/api/two-factor/challenge', ['code' => Totp::code($secret, $this->step())])
             ->assertUnprocessable();
 
+        $this->app['auth']->forgetGuards();
         $full = $this->withToken($pending)->postJson('/api/two-factor/challenge', ['code' => Totp::code($secret, $this->step(1))])
             ->assertOk()->json('token');
 
@@ -72,6 +75,7 @@ class TwoFactorTest extends ApiTestCase
         [, $codes] = $this->enable($user);
         $user->tokens()->delete();
 
+        $this->app['auth']->forgetGuards();
         $login = fn () => $this->postJson('/api/login', ['email' => $user->correo, 'password' => 'password', 'device_name' => 't'])
             ->json('challenge_token');
 
