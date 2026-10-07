@@ -76,11 +76,13 @@ class ConversationController extends Controller
             $conversation = Conversation::where($attributes)->firstOrFail();
         }
 
+        // wasRecentlyCreated se pierde al volver a cargar con relaciones: se guarda antes.
+        $created = $conversation->wasRecentlyCreated;
         $conversation = $this->withRelations()->findOrFail($conversation->id);
 
         return (new ConversationResource($conversation))
             ->response()
-            ->setStatusCode($conversation->wasRecentlyCreated ? 201 : 200);
+            ->setStatusCode($created ? 201 : 200);
     }
 
     /**

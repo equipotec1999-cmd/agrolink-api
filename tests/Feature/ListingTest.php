@@ -7,19 +7,38 @@ use Tests\ApiTestCase;
 
 class ListingTest extends ApiTestCase
 {
-    /** Un tipo de producto sin atributos obligatorios, para no depender de sus reglas aquí. */
-    private function simpleType(): ProductType
+    private function type(): ProductType
     {
-        return ProductType::query()
-            ->whereDoesntHave('attributes', fn ($q) => $q->where('tipo_producto_atributos.es_obligatorio', true))
-            ->firstOrFail();
+        return ProductType::query()->orderBy('id')->firstOrFail();
+    }
+
+    /** Valores válidos para los atributos obligatorios del tipo (respetando mínimos y máximos). */
+    private function requiredAttributes(ProductType $type): array
+    {
+        $values = [];
+        foreach ($type->attributes()->get() as $attr) {
+            if (! $attr->pivot->es_obligatorio) {
+                continue;
+            }
+            $values[$attr->clave] = match ($attr->tipo_dato) {
+                'number' => $attr->pivot->valor_minimo ?? 1,
+                'boolean' => true,
+                'date' => '2026-01-01',
+                'select' => $attr->options()->orderBy('id')->value('valor') ?? 'x',
+                default => 'x',
+            };
+        }
+
+        return $values;
     }
 
     private function payload(array $over = []): array
     {
+        $type = $this->type();
+
         return $over + [
-            'product_type_id' => $this->simpleType()->id,
-            'title' => 'Miel multifloral',
+            'product_type_id' => $type->id,
+            'title' => 'Lote de prueba',
             'description' => 'Cosecha reciente',
             'price' => 120,
             'price_type' => 'per_kg',
@@ -27,6 +46,7 @@ class ListingTest extends ApiTestCase
             'unit' => 'kg',
             'sale_mode' => 'individual',
             'negotiable' => true,
+            'attributes' => $this->requiredAttributes($type),
             'location' => ['state' => 'Yucatán', 'municipality' => 'Tizimín', 'lat' => 21.1411, 'lng' => -88.1500],
         ];
     }
@@ -52,6 +72,17 @@ class ListingTest extends ApiTestCase
         $this->postJson('/api/listings', $this->payload(['quantity' => 0]))->assertUnprocessable();
         $this->postJson('/api/listings', $this->payload(['price_type' => 'regalado']))->assertUnprocessable();
         $this->postJson('/api/listings', $this->payload(['location' => null]))->assertUnprocessable();
+    }
+
+    public function test_atributos_obligatorios_faltantes_se_rechazan(): void
+    {
+        $type = $this->type();
+        if ($this->requiredAttributes($type) === []) {
+            $this->markTestSkipped('El primer tipo de producto no tiene atributos obligatorios.');
+        }
+
+        $this->as($this->makeUser())->postJson('/api/listings', $this->payload(['attributes' => []]))
+            ->assertUnprocessable()->assertJsonValidationErrors('attributes');
     }
 
     public function test_crear_exige_sesion(): void
