@@ -24,6 +24,8 @@ Route::post('/register', [AuthController::class, 'register'])->middleware('throt
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 Route::post('/verify-contact', [AuthController::class, 'verifyContact'])->middleware('throttle:10,1');
 Route::post('/resend-verification', [AuthController::class, 'resendVerification'])->middleware('throttle:3,1');
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
 
 Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);

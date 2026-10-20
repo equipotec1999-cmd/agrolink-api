@@ -133,4 +133,34 @@ class AuthController extends Controller
     {
         return new UserResource($request->user()->load(['profile', 'sellerProfile']));
     }
+    /**
+     * Paso 1: pide el código. Siempre responde 200 (no revelamos si el correo existe).
+     * Si existe la cuenta, se le envía un código de 6 dígitos por correo.
+     */
+    public function forgotPassword(Request $request, \App\Services\ContactVerificationService $verify)
+    {
+        $data = $request->validate(['email' => ['required', 'email']]);
+        $email = strtolower(trim($data['email']));
+        $user = \App\Models\User::where('correo', $email)->first();
+        if ($user) {
+            $verify->sendPasswordReset($user, $email);
+        }
+        return response()->json(['message' => 'Si el correo existe, enviamos un código.']);
+    }
+
+    /** Paso 2: con el código correcto cambia la contraseña y cierra las sesiones previas. */
+    public function resetPassword(Request $request, \App\Services\ContactVerificationService $verify)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'code' => ['required', 'string', 'size:6'],
+            'password' => ['required', 'string', 'min:8', 'regex:/[A-Z]/', 'regex:/[a-z]/', 'regex:/[0-9]/'],
+        ]);
+        $user = $verify->verifyPasswordReset(strtolower(trim($data['email'])), $data['code']);
+        $user->forceFill(['contrasena' => $data['password']])->save();
+        // Revocar todos los tokens activos para forzar un inicio de sesión fresco.
+        $user->tokens()->delete();
+        return response()->json(['message' => 'Contraseña actualizada.']);
+    }
+
 }

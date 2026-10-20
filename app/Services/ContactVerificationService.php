@@ -81,9 +81,9 @@ class ContactVerificationService
         return ['user' => $user->fresh(), 'channel' => $row->canal];
     }
 
-    private function sendByEmail(string $to, string $code): void
+    private function sendByEmail(string $to, string $code, string $subject = 'Confirma tu cuenta — AgroLink', ?string $body = null): void
     {
-        $text = "Tu código de confirmación de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.";
+        $text = $body ?? "Tu código de confirmación de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.";
 
         // Preferido: API de Resend (más confiable que SMTP desde Render).
         $key = config('services.resend.key');
@@ -94,7 +94,7 @@ class ContactVerificationService
                     ->post('https://api.resend.com/emails', [
                         'from' => config('services.resend.from'),
                         'to' => [$to],
-                        'subject' => 'Confirma tu cuenta — AgroLink',
+                        'subject' => $subject,
                         'text' => $text,
                     ])
                     ->throw();
@@ -107,7 +107,7 @@ class ContactVerificationService
 
         // Respaldo: el mailer configurado en MAIL_* (por defecto "log").
         try {
-            Mail::raw($text, fn ($msg) => $msg->to($to)->subject('Confirma tu cuenta — AgroLink'));
+            Mail::raw($text, fn ($msg) => $msg->to($to)->subject($subject));
         } catch (\Throwable $e) {
             Log::warning('No se pudo enviar correo de verificación', ['error' => $e->getMessage()]);
         }
@@ -116,4 +116,59 @@ class ContactVerificationService
             Log::info("Código de verificación (email) para {$to}: {$code}");
         }
     }
+
+    /** Envía un código de 6 dígitos para resetear la contraseña. Reemplaza cualquier código previo. */
+    public function sendPasswordReset(User $user, string $destination): void
+    {
+        $code = str_pad((string) random_int(0, 999_999), self::CODE_LENGTH, '0', STR_PAD_LEFT);
+
+        DB::table('codigos_verificacion_contacto')
+            ->where('usuario_id', $user->id)
+            ->where('canal', 'password_reset')
+            ->delete();
+
+        DB::table('codigos_verificacion_contacto')->insert([
+            'usuario_id' => $user->id,
+            'canal' => 'password_reset',
+            'destino' => $destination,
+            'codigo_hash' => Hash::make($code),
+            'intentos' => 0,
+            'expira_en' => Carbon::now()->addMinutes(self::EXPIRES_MINUTES),
+            'creado_en' => Carbon::now(),
+        ]);
+
+        $this->sendByEmail($destination, $code, subject: 'Recupera tu contraseña — AgroLink',
+            body: "Tu código para recuperar la contraseña de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.");
+    }
+
+    /** Valida el código de reseteo y devuelve el usuario. */
+    public function verifyPasswordReset(string $destination, string $code): User
+    {
+        $row = DB::table('codigos_verificacion_contacto')
+            ->where('destino', $destination)
+            ->where('canal', 'password_reset')
+            ->orderByDesc('id')
+            ->first();
+
+        if (! $row) {
+            throw ValidationException::withMessages(['code' => ['No hay código activo para este correo.']]);
+        }
+        if (Carbon::parse($row->expira_en)->isPast()) {
+            DB::table('codigos_verificacion_contacto')->where('id', $row->id)->delete();
+            throw ValidationException::withMessages(['code' => ['El código venció. Pide uno nuevo.']]);
+        }
+        if ((int) $row->intentos >= self::MAX_ATTEMPTS) {
+            DB::table('codigos_verificacion_contacto')->where('id', $row->id)->delete();
+            throw ValidationException::withMessages(['code' => ['Demasiados intentos. Pide un nuevo código.']]);
+        }
+        if (! Hash::check($code, $row->codigo_hash)) {
+            DB::table('codigos_verificacion_contacto')->where('id', $row->id)->increment('intentos');
+            throw ValidationException::withMessages(['code' => ['Código incorrecto.']]);
+        }
+
+        DB::table('codigos_verificacion_contacto')->where('id', $row->id)->delete();
+
+        return User::findOrFail($row->usuario_id);
+    }
+
 }
