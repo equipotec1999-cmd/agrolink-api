@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict KGRF3zGAhMWDxqGpgOs3gJo5WfG2GvaDLNzo9NamtQQdqlnRUiEfsFlqEBy8kjO
+\restrict UDbsIOKfq56KyuQeVLuN200ShTIat1SpJmu2pYGfD9AJoJGCPhqqwv65NgT2GPh
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -292,7 +292,7 @@ ALTER SEQUENCE public.categorias_id_seq OWNED BY public.categorias.id;
 CREATE TABLE public.codigos_verificacion_contacto (
     id bigint NOT NULL,
     usuario_id bigint NOT NULL,
-    canal character varying(10) NOT NULL,
+    canal character varying(30) NOT NULL,
     destino character varying(180) NOT NULL,
     codigo_hash character varying(255) NOT NULL,
     intentos smallint DEFAULT '0'::smallint NOT NULL,
@@ -2875,5 +2875,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict KGRF3zGAhMWDxqGpgOs3gJo5WfG2GvaDLNzo9NamtQQdqlnRUiEfsFlqEBy8kjO
+\unrestrict UDbsIOKfq56KyuQeVLuN200ShTIat1SpJmu2pYGfD9AJoJGCPhqqwv65NgT2GPh
 
