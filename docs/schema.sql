@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict UDbsIOKfq56KyuQeVLuN200ShTIat1SpJmu2pYGfD9AJoJGCPhqqwv65NgT2GPh
+\restrict 1bgGIHi6RA0ohWOMr73vgTbB6h92gsG5xcuke0bSpPcb9mgIZX8iLPHPsJ7ZWSd
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
@@ -355,6 +355,149 @@ ALTER SEQUENCE public.conversaciones_id_seq OWNED BY public.conversaciones.id;
 
 
 --
+-- Name: dim_estatus; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dim_estatus (
+    estatus_sk bigint NOT NULL,
+    entidad character varying(30) NOT NULL,
+    codigo character varying(40) NOT NULL
+);
+
+
+--
+-- Name: dim_estatus_estatus_sk_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dim_estatus_estatus_sk_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dim_estatus_estatus_sk_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dim_estatus_estatus_sk_seq OWNED BY public.dim_estatus.estatus_sk;
+
+
+--
+-- Name: dim_producto; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dim_producto (
+    producto_sk bigint NOT NULL,
+    tipo_producto_id bigint NOT NULL,
+    tipo_nombre character varying(100) NOT NULL,
+    categoria_id bigint NOT NULL,
+    categoria_nombre character varying(100) NOT NULL
+);
+
+
+--
+-- Name: dim_producto_producto_sk_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dim_producto_producto_sk_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dim_producto_producto_sk_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dim_producto_producto_sk_seq OWNED BY public.dim_producto.producto_sk;
+
+
+--
+-- Name: dim_tiempo; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dim_tiempo (
+    fecha_id integer NOT NULL,
+    fecha date NOT NULL,
+    anio smallint NOT NULL,
+    trimestre smallint NOT NULL,
+    mes smallint NOT NULL,
+    nombre_mes character varying(12) NOT NULL,
+    semana_anio smallint NOT NULL,
+    dia smallint NOT NULL,
+    dia_semana smallint NOT NULL,
+    es_fin_de_semana boolean NOT NULL
+);
+
+
+--
+-- Name: dim_ubicacion; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dim_ubicacion (
+    ubicacion_sk bigint NOT NULL,
+    estado character varying(100) NOT NULL,
+    municipio character varying(100) NOT NULL
+);
+
+
+--
+-- Name: dim_ubicacion_ubicacion_sk_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dim_ubicacion_ubicacion_sk_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dim_ubicacion_ubicacion_sk_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dim_ubicacion_ubicacion_sk_seq OWNED BY public.dim_ubicacion.ubicacion_sk;
+
+
+--
+-- Name: dim_usuario; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.dim_usuario (
+    usuario_sk bigint NOT NULL,
+    usuario_id bigint NOT NULL,
+    es_vendedor_verificado boolean DEFAULT false NOT NULL,
+    operaciones_completadas integer DEFAULT 0 NOT NULL,
+    calificacion_promedio numeric(3,2),
+    anio_registro smallint
+);
+
+
+--
+-- Name: dim_usuario_usuario_sk_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.dim_usuario_usuario_sk_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: dim_usuario_usuario_sk_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.dim_usuario_usuario_sk_seq OWNED BY public.dim_usuario.usuario_sk;
+
+
+--
 -- Name: documentos_publicacion; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -526,6 +669,84 @@ CREATE SEQUENCE public.favoritos_id_seq
 --
 
 ALTER SEQUENCE public.favoritos_id_seq OWNED BY public.favoritos.id;
+
+
+--
+-- Name: hecho_ofertas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hecho_ofertas (
+    oferta_id bigint NOT NULL,
+    publicacion_id bigint NOT NULL,
+    fecha_id integer NOT NULL,
+    remitente_sk bigint NOT NULL,
+    vendedor_sk bigint NOT NULL,
+    producto_sk bigint NOT NULL,
+    ubicacion_sk bigint NOT NULL,
+    estatus_sk bigint NOT NULL,
+    monto numeric(14,2) NOT NULL,
+    cantidad numeric(12,2) NOT NULL,
+    diferencia_pct_vs_lista numeric(7,2)
+);
+
+
+--
+-- Name: hecho_operaciones; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hecho_operaciones (
+    operacion_id bigint NOT NULL,
+    publicacion_id bigint NOT NULL,
+    fecha_id integer NOT NULL,
+    comprador_sk bigint NOT NULL,
+    vendedor_sk bigint NOT NULL,
+    producto_sk bigint NOT NULL,
+    ubicacion_sk bigint NOT NULL,
+    estatus_sk bigint NOT NULL,
+    monto numeric(14,2) NOT NULL,
+    cantidad numeric(12,2) NOT NULL,
+    precio_unitario numeric(14,2)
+);
+
+
+--
+-- Name: hecho_publicaciones; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hecho_publicaciones (
+    publicacion_id bigint NOT NULL,
+    fecha_creacion_id integer NOT NULL,
+    fecha_publicacion_id integer,
+    vendedor_sk bigint NOT NULL,
+    producto_sk bigint NOT NULL,
+    ubicacion_sk bigint NOT NULL,
+    estatus_sk bigint NOT NULL,
+    tipo_precio character varying(20) NOT NULL,
+    precio numeric(14,2),
+    cantidad numeric(12,2) NOT NULL,
+    precio_unitario numeric(14,2),
+    negociable boolean NOT NULL,
+    eliminada boolean DEFAULT false NOT NULL,
+    num_fotos integer DEFAULT 0 NOT NULL,
+    num_favoritos integer DEFAULT 0 NOT NULL,
+    num_conversaciones integer DEFAULT 0 NOT NULL,
+    num_ofertas integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- Name: hecho_reportes; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hecho_reportes (
+    reporte_id bigint NOT NULL,
+    fecha_id integer NOT NULL,
+    reportante_sk bigint NOT NULL,
+    estatus_sk bigint NOT NULL,
+    reportable_tipo character varying(60) NOT NULL,
+    motivo character varying(40) NOT NULL,
+    horas_a_resolver integer
+);
 
 
 --
@@ -1523,6 +1744,34 @@ ALTER TABLE ONLY public.conversaciones ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: dim_estatus estatus_sk; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_estatus ALTER COLUMN estatus_sk SET DEFAULT nextval('public.dim_estatus_estatus_sk_seq'::regclass);
+
+
+--
+-- Name: dim_producto producto_sk; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_producto ALTER COLUMN producto_sk SET DEFAULT nextval('public.dim_producto_producto_sk_seq'::regclass);
+
+
+--
+-- Name: dim_ubicacion ubicacion_sk; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_ubicacion ALTER COLUMN ubicacion_sk SET DEFAULT nextval('public.dim_ubicacion_ubicacion_sk_seq'::regclass);
+
+
+--
+-- Name: dim_usuario usuario_sk; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_usuario ALTER COLUMN usuario_sk SET DEFAULT nextval('public.dim_usuario_usuario_sk_seq'::regclass);
+
+
+--
 -- Name: documentos_publicacion id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1800,6 +2049,86 @@ ALTER TABLE ONLY public.conversaciones
 
 
 --
+-- Name: dim_estatus dim_estatus_entidad_codigo_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_estatus
+    ADD CONSTRAINT dim_estatus_entidad_codigo_unique UNIQUE (entidad, codigo);
+
+
+--
+-- Name: dim_estatus dim_estatus_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_estatus
+    ADD CONSTRAINT dim_estatus_pkey PRIMARY KEY (estatus_sk);
+
+
+--
+-- Name: dim_producto dim_producto_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_producto
+    ADD CONSTRAINT dim_producto_pkey PRIMARY KEY (producto_sk);
+
+
+--
+-- Name: dim_producto dim_producto_tipo_producto_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_producto
+    ADD CONSTRAINT dim_producto_tipo_producto_id_unique UNIQUE (tipo_producto_id);
+
+
+--
+-- Name: dim_tiempo dim_tiempo_fecha_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_tiempo
+    ADD CONSTRAINT dim_tiempo_fecha_unique UNIQUE (fecha);
+
+
+--
+-- Name: dim_tiempo dim_tiempo_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_tiempo
+    ADD CONSTRAINT dim_tiempo_pkey PRIMARY KEY (fecha_id);
+
+
+--
+-- Name: dim_ubicacion dim_ubicacion_estado_municipio_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_ubicacion
+    ADD CONSTRAINT dim_ubicacion_estado_municipio_unique UNIQUE (estado, municipio);
+
+
+--
+-- Name: dim_ubicacion dim_ubicacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_ubicacion
+    ADD CONSTRAINT dim_ubicacion_pkey PRIMARY KEY (ubicacion_sk);
+
+
+--
+-- Name: dim_usuario dim_usuario_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_usuario
+    ADD CONSTRAINT dim_usuario_pkey PRIMARY KEY (usuario_sk);
+
+
+--
+-- Name: dim_usuario dim_usuario_usuario_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.dim_usuario
+    ADD CONSTRAINT dim_usuario_usuario_id_unique UNIQUE (usuario_id);
+
+
+--
 -- Name: documentos_publicacion documentos_publicacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1853,6 +2182,38 @@ ALTER TABLE ONLY public.favoritos
 
 ALTER TABLE ONLY public.favoritos
     ADD CONSTRAINT favoritos_usuario_id_publicacion_id_unique UNIQUE (usuario_id, publicacion_id);
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_pkey PRIMARY KEY (oferta_id);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_pkey PRIMARY KEY (operacion_id);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_pkey PRIMARY KEY (publicacion_id);
+
+
+--
+-- Name: hecho_reportes hecho_reportes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_reportes
+    ADD CONSTRAINT hecho_reportes_pkey PRIMARY KEY (reporte_id);
 
 
 --
@@ -2236,6 +2597,13 @@ CREATE INDEX codigos_verificacion_contacto_usuario_id_canal_index ON public.codi
 
 
 --
+-- Name: conversaciones_comprador_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX conversaciones_comprador_idx ON public.conversaciones USING btree (comprador_id, ultimo_mensaje_en DESC);
+
+
+--
 -- Name: conversaciones_vendedor_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2261,6 +2629,55 @@ CREATE INDEX documentos_verificacion_solicitud_id_index ON public.documentos_ver
 --
 
 CREATE INDEX eventos_operacion_operacion_id_index ON public.eventos_operacion USING btree (operacion_id);
+
+
+--
+-- Name: favoritos_publicacion_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX favoritos_publicacion_idx ON public.favoritos USING btree (publicacion_id);
+
+
+--
+-- Name: favoritos_usuario_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX favoritos_usuario_idx ON public.favoritos USING btree (usuario_id, creado_en DESC);
+
+
+--
+-- Name: hecho_ofertas_producto_sk_fecha_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hecho_ofertas_producto_sk_fecha_id_index ON public.hecho_ofertas USING btree (producto_sk, fecha_id);
+
+
+--
+-- Name: hecho_operaciones_producto_sk_fecha_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hecho_operaciones_producto_sk_fecha_id_index ON public.hecho_operaciones USING btree (producto_sk, fecha_id);
+
+
+--
+-- Name: hecho_publicaciones_fecha_publicacion_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hecho_publicaciones_fecha_publicacion_id_index ON public.hecho_publicaciones USING btree (fecha_publicacion_id);
+
+
+--
+-- Name: hecho_publicaciones_producto_sk_ubicacion_sk_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hecho_publicaciones_producto_sk_ubicacion_sk_index ON public.hecho_publicaciones USING btree (producto_sk, ubicacion_sk);
+
+
+--
+-- Name: hecho_reportes_motivo_fecha_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX hecho_reportes_motivo_fecha_id_index ON public.hecho_reportes USING btree (motivo, fecha_id);
 
 
 --
@@ -2313,6 +2730,27 @@ CREATE INDEX ofertas_conversacion_id_index ON public.ofertas USING btree (conver
 
 
 --
+-- Name: ofertas_estatus_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ofertas_estatus_idx ON public.ofertas USING btree (estatus, vence_en);
+
+
+--
+-- Name: operaciones_comprador_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX operaciones_comprador_idx ON public.operaciones USING btree (comprador_id, creado_en DESC);
+
+
+--
+-- Name: operaciones_vendedor_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX operaciones_vendedor_idx ON public.operaciones USING btree (vendedor_id, creado_en DESC);
+
+
+--
 -- Name: personal_access_tokens_tokenable_type_tokenable_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2352,6 +2790,34 @@ CREATE INDEX publicaciones_busqueda_tsv_idx ON public.publicaciones USING gin (t
 --
 
 CREATE INDEX publicaciones_estatus_tipo_pub_idx ON public.publicaciones USING btree (estatus, tipo_producto_id, publicado_en);
+
+
+--
+-- Name: publicaciones_feed_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX publicaciones_feed_idx ON public.publicaciones USING btree (publicado_en DESC, id DESC) WHERE (((estatus)::text = 'publicada'::text) AND (eliminado_en IS NULL));
+
+
+--
+-- Name: publicaciones_feed_tipo_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX publicaciones_feed_tipo_idx ON public.publicaciones USING btree (tipo_producto_id, publicado_en DESC) WHERE (((estatus)::text = 'publicada'::text) AND (eliminado_en IS NULL));
+
+
+--
+-- Name: publicaciones_revision_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX publicaciones_revision_idx ON public.publicaciones USING btree (creado_en) WHERE ((estatus)::text = 'en_revision'::text);
+
+
+--
+-- Name: publicaciones_usuario_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX publicaciones_usuario_idx ON public.publicaciones USING btree (usuario_id, id DESC);
 
 
 --
@@ -2541,6 +3007,174 @@ ALTER TABLE ONLY public.favoritos
 
 ALTER TABLE ONLY public.favoritos
     ADD CONSTRAINT favoritos_usuario_id_foreign FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_estatus_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_estatus_sk_foreign FOREIGN KEY (estatus_sk) REFERENCES public.dim_estatus(estatus_sk);
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_fecha_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_fecha_id_foreign FOREIGN KEY (fecha_id) REFERENCES public.dim_tiempo(fecha_id);
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_producto_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_producto_sk_foreign FOREIGN KEY (producto_sk) REFERENCES public.dim_producto(producto_sk);
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_remitente_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_remitente_sk_foreign FOREIGN KEY (remitente_sk) REFERENCES public.dim_usuario(usuario_sk);
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_ubicacion_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_ubicacion_sk_foreign FOREIGN KEY (ubicacion_sk) REFERENCES public.dim_ubicacion(ubicacion_sk);
+
+
+--
+-- Name: hecho_ofertas hecho_ofertas_vendedor_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_ofertas
+    ADD CONSTRAINT hecho_ofertas_vendedor_sk_foreign FOREIGN KEY (vendedor_sk) REFERENCES public.dim_usuario(usuario_sk);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_comprador_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_comprador_sk_foreign FOREIGN KEY (comprador_sk) REFERENCES public.dim_usuario(usuario_sk);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_estatus_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_estatus_sk_foreign FOREIGN KEY (estatus_sk) REFERENCES public.dim_estatus(estatus_sk);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_fecha_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_fecha_id_foreign FOREIGN KEY (fecha_id) REFERENCES public.dim_tiempo(fecha_id);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_producto_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_producto_sk_foreign FOREIGN KEY (producto_sk) REFERENCES public.dim_producto(producto_sk);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_ubicacion_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_ubicacion_sk_foreign FOREIGN KEY (ubicacion_sk) REFERENCES public.dim_ubicacion(ubicacion_sk);
+
+
+--
+-- Name: hecho_operaciones hecho_operaciones_vendedor_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_operaciones
+    ADD CONSTRAINT hecho_operaciones_vendedor_sk_foreign FOREIGN KEY (vendedor_sk) REFERENCES public.dim_usuario(usuario_sk);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_estatus_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_estatus_sk_foreign FOREIGN KEY (estatus_sk) REFERENCES public.dim_estatus(estatus_sk);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_fecha_creacion_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_fecha_creacion_id_foreign FOREIGN KEY (fecha_creacion_id) REFERENCES public.dim_tiempo(fecha_id);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_fecha_publicacion_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_fecha_publicacion_id_foreign FOREIGN KEY (fecha_publicacion_id) REFERENCES public.dim_tiempo(fecha_id);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_producto_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_producto_sk_foreign FOREIGN KEY (producto_sk) REFERENCES public.dim_producto(producto_sk);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_ubicacion_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_ubicacion_sk_foreign FOREIGN KEY (ubicacion_sk) REFERENCES public.dim_ubicacion(ubicacion_sk);
+
+
+--
+-- Name: hecho_publicaciones hecho_publicaciones_vendedor_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_publicaciones
+    ADD CONSTRAINT hecho_publicaciones_vendedor_sk_foreign FOREIGN KEY (vendedor_sk) REFERENCES public.dim_usuario(usuario_sk);
+
+
+--
+-- Name: hecho_reportes hecho_reportes_estatus_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_reportes
+    ADD CONSTRAINT hecho_reportes_estatus_sk_foreign FOREIGN KEY (estatus_sk) REFERENCES public.dim_estatus(estatus_sk);
+
+
+--
+-- Name: hecho_reportes hecho_reportes_fecha_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_reportes
+    ADD CONSTRAINT hecho_reportes_fecha_id_foreign FOREIGN KEY (fecha_id) REFERENCES public.dim_tiempo(fecha_id);
+
+
+--
+-- Name: hecho_reportes hecho_reportes_reportante_sk_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hecho_reportes
+    ADD CONSTRAINT hecho_reportes_reportante_sk_foreign FOREIGN KEY (reportante_sk) REFERENCES public.dim_usuario(usuario_sk);
 
 
 --
@@ -2875,5 +3509,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UDbsIOKfq56KyuQeVLuN200ShTIat1SpJmu2pYGfD9AJoJGCPhqqwv65NgT2GPh
+\unrestrict 1bgGIHi6RA0ohWOMr73vgTbB6h92gsG5xcuke0bSpPcb9mgIZX8iLPHPsJ7ZWSd
 
