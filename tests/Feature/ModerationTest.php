@@ -185,7 +185,7 @@ class ModerationTest extends ApiTestCase
         $mod = $this->as($this->makeUser('moderador'));
 
         $mod->deleteJson("/api/moderation/listings/{$lista->id}", ['reason' => 'Contenido indebido'])->assertNoContent();
-        $this->assertSoftDeleted('publicaciones', ['id' => $lista->id]);
+        $this->assertSoftDeleted($lista);
 
         $mod->deleteJson("/api/moderation/listings/{$lista->id}", ['reason' => 'Contenido indebido'])->assertNoContent();
     }
