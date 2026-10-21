@@ -178,4 +178,15 @@ class ModerationTest extends ApiTestCase
         $this->assertCount(1, $data);
         $this->assertSame('Hola, ¿sigue disponible?', $data[0]['messages'][0]['body']);
     }
+
+    public function test_eliminar_es_idempotente_y_no_da_404_si_ya_estaba_eliminada(): void
+    {
+        $lista = $this->makeListing($this->makeUser('vendedor'));
+        $mod = $this->as($this->makeUser('moderador'));
+
+        $mod->deleteJson("/api/moderation/listings/{$lista->id}", ['reason' => 'Contenido indebido'])->assertNoContent();
+        $this->assertSoftDeleted('publicaciones', ['id' => $lista->id]);
+
+        $mod->deleteJson("/api/moderation/listings/{$lista->id}", ['reason' => 'Contenido indebido'])->assertNoContent();
+    }
 }

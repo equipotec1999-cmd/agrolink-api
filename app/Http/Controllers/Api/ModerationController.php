@@ -103,6 +103,12 @@ class ModerationController extends Controller
     public function destroy(Request $request, Listing $listing)
     {
         $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:300']]);
+
+        // Idempotente: si ya estaba eliminada (otro mod, o reintento de red) no es un error.
+        if ($listing->trashed()) {
+            return response()->noContent();
+        }
+
         $this->audit($request, 'listing.deleted', 'listing', $listing->id, ['motivo' => $data['reason'], 'titulo' => $listing->titulo]);
         NotificationService::listingModerated('listing_suspended', $listing, 'Eliminada por moderación: '.$data['reason']);
         $listing->delete();
