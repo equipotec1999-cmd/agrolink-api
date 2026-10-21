@@ -477,3 +477,7 @@ Token de notificaciones push (Firebase) de cada celular con sesión. *(tabla nue
 |---|---|---|---|
 | `publicaciones` | `motivo_moderacion` | texto (300), nulo | Motivo del último rechazo/suspensión; lo ve el dueño. |
 | `usuarios` | `dos_factores_ultimo_paso` | entero grande, nulo | Último intervalo TOTP aceptado (evita reusar un código). |
+
+## Capa analítica (constelación)
+
+Además de las tablas de arriba hay `dim_*` y `hecho_*` derivadas de ellas para estadísticas. Ver [`CONSTELACION.md`](CONSTELACION.md).

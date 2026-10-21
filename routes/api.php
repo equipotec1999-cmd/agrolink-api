@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SavedSearchController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
+use App\Http\Controllers\Api\MarketController;
 use App\Http\Controllers\Api\ModerationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OfferController;
@@ -44,6 +45,10 @@ Route::post('/two-factor/challenge', [TwoFactorController::class, 'challenge'])
 // Catálogo: lectura pública, no requiere sesión (se necesita para poder buscar sin cuenta).
 Route::get('/categories', [CatalogController::class, 'categories']);
 Route::get('/product-types/{productType}/attributes', [CatalogController::class, 'productTypeAttributes']);
+
+// Estadísticas de mercado: agregados públicos leídos de la constelación.
+Route::get('/market/summary', [MarketController::class, 'summary'])->middleware('throttle:30,1');
+Route::get('/market/prices', [MarketController::class, 'prices'])->middleware('throttle:30,1');
 
 // Listings: lectura pública; escritura requiere sesión.
 Route::get('/listings', [ListingController::class, 'index']);
