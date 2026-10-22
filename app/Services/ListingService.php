@@ -129,6 +129,10 @@ class ListingService
                 throw ValidationException::withMessages(["attributes.$key" => "El máximo para {$attribute->etiqueta} es {$attribute->pivot->valor_maximo}."]);
             }
 
+            if ($attribute->tipo_dato === 'date') {
+                $value = self::normalizeDate($key, (string) $value);
+            }
+
             $row = ['publicacion_id' => $listing->id, 'atributo_id' => $attribute->id];
 
             $row = match ($attribute->tipo_dato) {
@@ -217,5 +221,23 @@ class ListingService
         }
 
         return $slug;
+    }
+
+    /**
+     * La app captura fechas como dd/mm/aaaa; Carbon::parse() las rechaza (500). Se aceptan
+     * dd/mm/aaaa, dd-mm-aaaa y aaaa-mm-dd y se guardan como aaaa-mm-dd; si no es válida: 422.
+     */
+    public static function normalizeDate(string $key, string $value): string
+    {
+        $value = trim($value);
+        foreach (['Y-m-d', 'd/m/Y', 'd-m-Y'] as $format) {
+            $d = \DateTimeImmutable::createFromFormat('!'.$format, $value);
+            $errors = \DateTimeImmutable::getLastErrors();
+            if ($d !== false && (! $errors || ($errors['warning_count'] === 0 && $errors['error_count'] === 0))) {
+                return $d->format('Y-m-d');
+            }
+        }
+
+        throw ValidationException::withMessages(["attributes.$key" => 'Fecha no válida. Usa el formato dd/mm/aaaa.']);
     }
 }

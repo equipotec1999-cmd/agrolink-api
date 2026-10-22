@@ -146,4 +146,12 @@ class ListingTest extends ApiTestCase
 
         $this->as($user)->postJson('/api/listings', $this->payload())->assertCreated();
     }
+
+    public function test_las_fechas_dd_mm_aaaa_se_normalizan_y_las_invalidas_dan_422(): void
+    {
+        $this->assertSame('2026-10-20', \App\Services\ListingService::normalizeDate('f', '20/10/2026'));
+        $this->assertSame('2026-10-20', \App\Services\ListingService::normalizeDate('f', '2026-10-20'));
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        \App\Services\ListingService::normalizeDate('f', '31/02/2026');
+    }
 }
