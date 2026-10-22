@@ -137,4 +137,13 @@ class ListingTest extends ApiTestCase
         $titles = collect($this->getJson('/api/my/listings')->assertOk()->json('data'))->pluck('title');
         $this->assertSame(['Mía'], $titles->all());
     }
+
+    public function test_el_slug_no_choca_con_una_publicacion_eliminada(): void
+    {
+        $user = $this->makeUser();
+        $primera = $this->as($user)->postJson('/api/listings', $this->payload())->assertCreated();
+        \App\Models\Listing::findOrFail($primera->json('data.id'))->delete();
+
+        $this->as($user)->postJson('/api/listings', $this->payload())->assertCreated();
+    }
 }

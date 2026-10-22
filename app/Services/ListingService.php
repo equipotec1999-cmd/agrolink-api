@@ -211,7 +211,8 @@ class ListingService
         $base = Str::slug($title);
         $slug = $base;
         $i = 1;
-        while (Listing::where('slug', $slug)->exists()) {
+        // withTrashed: las eliminadas (soft delete) siguen ocupando el slug en la BD.
+        while (Listing::withTrashed()->where('slug', $slug)->exists()) {
             $slug = "{$base}-".(++$i);
         }
 
