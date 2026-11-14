@@ -138,6 +138,35 @@ class ListingTest extends ApiTestCase
         $this->assertSame(['Mía'], $titles->all());
     }
 
+    public function test_vista_previa_una_publicacion_en_revision_solo_la_ven_su_dueno_y_moderadores(): void
+    {
+        $owner = $this->makeUser('vendedor');
+        $enRevision = $this->makeListing($owner, ['estatus' => 'en_revision', 'publicado_en' => null, 'vence_en' => null]);
+
+        // Un visitante sin sesión y un comprador cualquiera: no existe para ellos.
+        $this->getJson("/api/listings/{$enRevision->id}")->assertNotFound();
+        $this->as($this->makeUser())->getJson("/api/listings/{$enRevision->id}")->assertNotFound();
+
+        // El dueño y un moderador la abren y reciben el estatus real para pintar la vista previa.
+        $this->as($owner)->getJson("/api/listings/{$enRevision->id}")
+            ->assertOk()->assertJsonPath('data.status', 'en_revision');
+        $this->as($this->makeUser('moderador'))->getJson("/api/listings/{$enRevision->id}")
+            ->assertOk()->assertJsonPath('data.status', 'en_revision');
+    }
+
+    public function test_per_page_se_respeta_y_tiene_tope(): void
+    {
+        $owner = $this->makeUser('vendedor');
+        foreach (range(1, 3) as $i) {
+            $this->makeListing($owner, ['titulo' => "Lote $i"]);
+        }
+
+        $this->getJson('/api/listings?per_page=2')->assertOk()
+            ->assertJsonCount(2, 'data')->assertJsonPath('meta.last_page', 2);
+        $this->getJson('/api/listings?per_page=9999')->assertOk()->assertJsonPath('meta.per_page', 50);
+        $this->getJson('/api/listings')->assertOk()->assertJsonPath('meta.per_page', 20);
+    }
+
     public function test_el_slug_no_choca_con_una_publicacion_eliminada(): void
     {
         $user = $this->makeUser();

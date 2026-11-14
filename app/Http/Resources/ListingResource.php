@@ -26,8 +26,9 @@ class ListingResource extends JsonResource
             'published_at' => $this->publicado_en,
             'expires_at' => $this->vence_en,
             // Solo el dueño ve el motivo del rechazo/suspensión.
+            // (`user('sanctum')`: en las rutas públicas el guard por defecto no resuelve el token.)
             'moderation_note' => $this->when(
-                $request->user() !== null && $request->user()->id === $this->usuario_id,
+                $request->user('sanctum') !== null && $request->user('sanctum')->id === $this->usuario_id,
                 $this->motivo_moderacion,
             ),
             'product_type' => [

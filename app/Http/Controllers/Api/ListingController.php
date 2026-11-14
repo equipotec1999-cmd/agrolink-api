@@ -10,6 +10,7 @@ use App\Http\Resources\ListingMediaResource;
 use App\Http\Resources\ListingResource;
 use App\Models\Listing;
 use App\Models\ListingMedia;
+use App\Models\User;
 use App\Services\ListingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -55,7 +56,9 @@ class ListingController extends Controller
             );
         }
 
-        $listings = $query->orderByDesc('publicado_en')->paginate(20);
+        // `per_page` lo pide la app (hasta 50); sin él, 20 como siempre. Tope para que nadie pida todo de golpe.
+        $perPage = min(max($request->integer('per_page', 20), 1), 50);
+        $listings = $query->orderByDesc('publicado_en')->paginate($perPage);
 
         return ListingResource::collection($listings);
     }
@@ -100,9 +103,26 @@ class ListingController extends Controller
         return (new ListingResource($listing))->response()->setStatusCode(201);
     }
 
-    public function show(Listing $listing)
+    /**
+     * Quién hace la petición en una ruta PÚBLICA. Estas rutas no pasan por `auth:sanctum`, y el guard por
+     * defecto es `web` (sesión), así que `$request->user()` llegaba siempre vacío aunque la app mandara el
+     * token: el dueño y los moderadores recibían 404 al abrir una publicación que aún no es pública.
+     * Un token a medias (verificación en dos pasos pendiente) cuenta como visitante.
+     */
+    private function sessionUser(Request $request): ?User
     {
-        $u = request()->user();
+        $user = $request->user('sanctum');
+        $token = $user?->currentAccessToken();
+        if ($token && method_exists($token, 'can') && ! $token->can('*')) {
+            return null;
+        }
+
+        return $user;
+    }
+
+    public function show(Request $request, Listing $listing)
+    {
+        $u = $this->sessionUser($request);
         $puedeVerOcultas = $u && ($u->can('moderate listings') || $u->can('moderate documents'));
         abort_unless($listing->estatus === 'publicada' || $u?->id === $listing->usuario_id || $puedeVerOcultas, 404);
 
