@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\ModerationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OfferController;
 use App\Http\Controllers\Api\OperationController;
+use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\Api\VerificationController;
@@ -93,6 +94,9 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     // Operaciones (Fase 5, bloque 3): lectura. Los cambios de estado llegan con pagos/entrega.
     Route::get('/operations', [OperationController::class, 'index']);
     Route::get('/operations/{operation}', [OperationController::class, 'show']);
+    Route::post('/operations/{operation}/transition', [OperationController::class, 'transition']);
+    Route::post('/operations/{operation}/review', [ReviewController::class, 'store']);
+    Route::get('/sellers/{user}/reviews', [ReviewController::class, 'forSeller']);
 
     // Notificaciones dentro de la app (Fase 5, bloque 4).
     Route::get('/notifications', [NotificationController::class, 'index']);

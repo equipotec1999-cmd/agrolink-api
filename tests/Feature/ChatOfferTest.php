@@ -149,4 +149,76 @@ class ChatOfferTest extends ApiTestCase
         $this->getJson('/api/operations?role=buyer')->assertOk()->assertJsonCount(0, 'data');
         $this->as($buyer)->getJson('/api/operations?role=buyer')->assertOk()->assertJsonCount(1, 'data');
     }
+
+    private function operation($seller, $buyer): int
+    {
+        $id = $this->conversation($buyer, $this->makeListing($seller));
+        $this->postJson("/api/conversations/$id/offers", ['amount' => 1000, 'quantity' => 1])->assertCreated();
+        $this->as($seller)->postJson('/api/offers/'.\App\Models\Offer::firstOrFail()->id.'/accept')->assertOk();
+
+        return \App\Models\Operation::firstOrFail()->id;
+    }
+
+    public function test_ciclo_completo_pago_entrega_y_confirmacion(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $op = $this->operation($seller, $buyer);
+
+        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'pendiente_pago'])
+            ->assertOk()->assertJsonPath('data.status', 'pendiente_pago');
+        // El comprador no puede confirmar su propio pago ni saltarse la entrega.
+        $this->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertUnprocessable();
+        $this->postJson("/api/operations/$op/transition", ['status' => 'completado'])->assertUnprocessable();
+
+        $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertOk();
+        $this->postJson("/api/operations/$op/transition", ['status' => 'en_transito'])->assertOk();
+        $this->postJson("/api/operations/$op/transition", ['status' => 'entregado'])->assertOk()
+            ->assertJsonPath('data.actions', []);
+        // El vendedor no puede darla por completada: la confirma quien recibe.
+        $this->postJson("/api/operations/$op/transition", ['status' => 'completado'])->assertUnprocessable();
+
+        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'completado'])
+            ->assertOk()->assertJsonPath('data.can_review', true);
+        // Reintento idempotente: no duplica eventos ni suma otra operación al vendedor.
+        $this->postJson("/api/operations/$op/transition", ['status' => 'completado'])->assertOk();
+
+        $this->assertSame(1, \App\Models\SellerProfile::find($seller->id)->operaciones_completadas);
+        $this->assertSame(6, \App\Models\OperationEvent::where('operacion_id', $op)->count());
+    }
+
+    public function test_un_extrano_no_puede_mover_la_operacion_y_se_puede_cancelar_antes_del_pago(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $op = $this->operation($seller, $buyer);
+
+        $this->as($this->makeUser())->postJson("/api/operations/$op/transition", ['status' => 'cancelado'])->assertNotFound();
+        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'cancelado'])
+            ->assertOk()->assertJsonPath('data.status', 'cancelado');
+        $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertUnprocessable();
+    }
+
+    public function test_calificar_solo_una_vez_y_solo_si_esta_completada(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $op = $this->operation($seller, $buyer);
+        $rating = ['accuracy' => 5, 'fulfillment' => 4, 'communication' => 5, 'comment' => 'Todo bien'];
+
+        $this->as($buyer)->postJson("/api/operations/$op/review", $rating)->assertUnprocessable();
+
+        \App\Models\Operation::whereKey($op)->update(['estatus' => 'completado']);
+        $this->postJson("/api/operations/$op/review", ['accuracy' => 9] + $rating)->assertUnprocessable();
+        $this->postJson("/api/operations/$op/review", $rating)->assertCreated();
+        $this->postJson("/api/operations/$op/review", $rating)->assertUnprocessable();
+
+        $perfil = \App\Models\SellerProfile::find($seller->id);
+        $this->assertEquals(5.0, $perfil->calificacion_exactitud);
+        $this->assertEquals(4.0, $perfil->calificacion_cumplimiento);
+
+        // El vendedor también califica (otros ejes) y eso no toca su propio perfil.
+        $this->as($seller)->postJson("/api/operations/$op/review", ['payment' => 5, 'reception' => 5, 'communication' => 4])->assertCreated();
+        $this->getJson("/api/sellers/{$seller->id}/reviews")->assertOk()->assertJsonCount(1, 'data');
+    }
 }

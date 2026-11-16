@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Conversation;
 use App\Models\Listing;
 use App\Models\Offer;
+use App\Models\Operation;
 use App\Models\User;
 use App\Models\UserNotification;
 use App\Support\NotificationText;
@@ -58,6 +59,7 @@ class NotificationService
         app()->terminating(fn () => PushService::toUser($userId, $title, $body, [
             'type' => $type,
             'conversation_id' => $data['conversation_id'] ?? '',
+            'operation_id' => isset($data['operation_id']) ? (string) $data['operation_id'] : '',
         ]));
     }
 
@@ -100,6 +102,38 @@ class NotificationService
             'quantity' => (float) $offer->cantidad,
             'operation_id' => $operationId,
         ]);
+    }
+
+    private static function operationBase(Operation $op, User $actor): array
+    {
+        $op->loadMissing('listing:id,titulo', 'offer:id,conversacion_id');
+
+        return [
+            'operation_id' => $op->id,
+            'conversation_id' => (string) $op->offer->conversacion_id,
+            'listing_title' => $op->listing->titulo,
+            'actor_name' => $actor->nombre,
+        ];
+    }
+
+    /** Aviso a la otra parte de la operación. */
+    private static function otherInOperation(Operation $op, User $actor): int
+    {
+        return $op->comprador_id === $actor->id ? $op->vendedor_id : $op->comprador_id;
+    }
+
+    /** La operación cambió de estado (pago, entrega, cancelación...): avisa a la otra persona. */
+    public static function operationUpdated(Operation $op, User $actor, string $status): void
+    {
+        self::put(self::otherInOperation($op, $actor), 'operation_updated', self::operationBase($op, $actor) + [
+            'status' => $status,
+        ]);
+    }
+
+    /** Alguien calificó a la otra parte de la operación. */
+    public static function reviewReceived(Operation $op, User $actor): void
+    {
+        self::put(self::otherInOperation($op, $actor), 'review_received', self::operationBase($op, $actor));
     }
 
     /** Aviso al dueño de una publicación: listing_approved | listing_rejected | listing_suspended. */
