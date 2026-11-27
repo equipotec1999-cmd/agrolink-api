@@ -20,7 +20,7 @@ return [
     | verificado en Resend los correos solo llegan al dueño de la cuenta de Resend.
     | Enciéndela con EMAIL_VERIFICATION_REQUIRED=true cuando el dominio esté listo.
     */
-    'verificar_correo' => (bool) env('EMAIL_VERIFICATION_REQUIRED', false),
+    'verificar_correo' => (bool) env('EMAIL_VERIFICATION_REQUIRED', true),
 
     /*
     |--------------------------------------------------------------------------

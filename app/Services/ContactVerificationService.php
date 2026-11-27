@@ -47,8 +47,9 @@ class ContactVerificationService
     /** Valida el código. Devuelve el canal que se verificó. */
     public function verify(string $destination, string $code): array
     {
+        $destination = strtolower(trim($destination));
         $row = DB::table('codigos_verificacion_contacto')
-            ->where('destino', $destination)
+            ->whereRaw('lower(destino) = ?', [$destination])
             ->where('canal', '!=', 'password_reset')
             ->orderByDesc('id')
             ->first();
@@ -82,15 +83,52 @@ class ContactVerificationService
         return ['user' => $user->fresh(), 'channel' => $row->canal];
     }
 
-    private function sendByEmail(string $to, string $code, string $subject = 'Confirma tu cuenta — AgroLink', ?string $body = null): void
+    private function sendByEmail(string $to, string $code, string $subject = 'Confirma tu correo — AgroLink', ?string $body = null, array $view = []): void
     {
-        $text = $body ?? "Tu código de confirmación de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.";
+        $text = $body ?? "¡Bienvenido a AgroLink!\n\nTu código para confirmar tu correo es: {$code}\n\nVence en 15 minutos. Si no creaste una cuenta, ignora este mensaje.";
+        $view += [
+            'title' => 'Confirma tu correo',
+            'intro' => '¡Bienvenido a AgroLink! Escribe este código en la app para activar tu cuenta.',
+            'note' => 'Si no creaste una cuenta en AgroLink, ignora este correo: sin este código nadie puede usarla.',
+            'preheader' => "Tu código de AgroLink es {$code}",
+        ];
+        $view['code'] = $code;
 
-        if (! $this->deliver($to, $subject, $text)) {
+        if (! $this->deliver($to, $subject, $text, $view)) {
             // Sin proveedor que funcione (modo desarrollo o mal configurado): deja el código en los logs
             // para poder probar desde Render → Logs.
             Log::warning("Correo NO enviado. Código para {$to}: {$code}");
         }
+    }
+
+    /** Arma el HTML con la plantilla de la marca. Sin $view, convierte el texto en párrafos. */
+    public function renderHtml(string $subject, string $text, array $view = []): string
+    {
+        $view += [
+            'title' => trim(str_replace('— AgroLink', '', $subject)),
+            'intro' => null,
+            'code' => null,
+            'note' => null,
+            'lines' => empty($view['code']) ? preg_split("/\n\s*\n/", trim($text)) : [],
+        ];
+        $view['preheader'] ??= mb_substr(preg_replace('/\s+/', ' ', $text), 0, 110);
+        $view['logoUrl'] ??= $this->logoUrl();
+
+        return view('emails.agrolink', $view)->render();
+    }
+
+    /** URL pública del emblema: MAIL_LOGO_URL, o la del propio servidor (siempre https fuera de local). */
+    private function logoUrl(): ?string
+    {
+        if ($custom = config('services.mail_logo_url')) {
+            return $custom;
+        }
+        $base = rtrim(url('/'), '/');
+        if (str_contains($base, 'localhost') || str_contains($base, '127.0.0.1')) {
+            return null;
+        }
+
+        return preg_replace('#^http://#', 'https://', $base).'/img/email-logo.png';
     }
 
     /**
@@ -100,9 +138,16 @@ class ContactVerificationService
     /** Motivo del último fallo de envío (para la prueba de correo de moderación). */
     public ?string $lastError = null;
 
-    public function deliver(string $to, string $subject, string $text): bool
+    public function deliver(string $to, string $subject, string $text, array $view = []): bool
     {
         $this->lastError = null;
+        try {
+            $html = $this->renderHtml($subject, $text, $view);
+        } catch (\Throwable $e) {
+            // Si la plantilla fallara, el correo sale igual en texto plano.
+            Log::warning('No se pudo armar el HTML del correo', ['error' => $e->getMessage()]);
+            $html = null;
+        }
         $errors = [];
         $brevo = config('services.brevo.key');
         if ($brevo && config('services.brevo.from_email')) {
@@ -117,7 +162,7 @@ class ContactVerificationService
                         'to' => [['email' => $to]],
                         'subject' => $subject,
                         'textContent' => $text,
-                    ])
+                    ] + ($html ? ['htmlContent' => $html] : []))
                     ->throw();
 
                 return true;
@@ -140,7 +185,7 @@ class ContactVerificationService
                         'to' => [$to],
                         'subject' => $subject,
                         'text' => $text,
-                    ])
+                    ] + ($html ? ['html' => $html] : []))
                     ->throw();
 
                 return true;
@@ -152,7 +197,9 @@ class ContactVerificationService
 
         if (! in_array(config('mail.default'), ['log', 'array'], true)) {
             try {
-                Mail::raw($text, fn ($msg) => $msg->to($to)->subject($subject));
+                $html
+                    ? Mail::html($html, fn ($msg) => $msg->to($to)->subject($subject))
+                    : Mail::raw($text, fn ($msg) => $msg->to($to)->subject($subject));
 
                 return true;
             } catch (\Throwable $e) {
@@ -192,7 +239,12 @@ class ContactVerificationService
         ]);
 
         $this->sendByEmail($destination, $code, subject: 'Recupera tu contraseña — AgroLink',
-            body: "Tu código para recuperar la contraseña de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.");
+            body: "Tu código para recuperar la contraseña de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.",
+            view: [
+                'title' => 'Recupera tu contraseña',
+                'intro' => 'Recibimos una solicitud para cambiar la contraseña de tu cuenta. Escribe este código en la app.',
+                'note' => 'Si no lo pediste, ignora este correo: tu contraseña sigue igual. Nunca compartas este código con nadie, ni con quien diga ser de AgroLink.',
+            ]);
     }
 
     /** Valida el código de reseteo y devuelve el usuario. */

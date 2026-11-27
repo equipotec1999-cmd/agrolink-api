@@ -46,13 +46,58 @@ class AuthTest extends ApiTestCase
     {
         $this->register(['password' => 'abc', 'password_confirmation' => 'abc'])->assertUnprocessable();
 
-        $this->register()->assertCreated();
+        // Ya confirmado: el correo queda ocupado (sin importar mayúsculas).
+        $this->registerAndVerify();
         $this->register()->assertUnprocessable()->assertJsonValidationErrors('email');
+        $this->register(['email' => 'ANA@Example.com'])->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+
+    public function test_un_registro_sin_confirmar_no_aparta_el_correo(): void
+    {
+        $this->register(['phone' => '9991234567'])->assertCreated();
+        // Se vuelve a registrar con el mismo correo y teléfono: reemplaza al pendiente.
+        $this->register(['name' => 'Ana Otra', 'phone' => '9991234567'])->assertCreated();
+
+        $this->assertSame(1, User::where('correo', 'ana@example.com')->count());
+        $this->assertSame('Ana Otra', User::where('correo', 'ana@example.com')->value('nombre'));
+    }
+
+    public function test_el_correo_se_guarda_en_minusculas(): void
+    {
+        $this->register(['email' => '  Ana@Example.COM '])->assertCreated()
+            ->assertJsonPath('verification.destination', 'ana@example.com');
+    }
+
+    public function test_login_sin_correo_confirmado_pide_el_codigo_y_no_da_sesion(): void
+    {
+        $this->register()->assertCreated();
+        DB::table('codigos_verificacion_contacto')->delete();
+
+        $this->postJson('/api/login', ['email' => 'ana@example.com', 'password' => 'Secreta123', 'device_name' => 'test'])
+            ->assertOk()
+            ->assertJsonPath('requires_verification', true)
+            ->assertJsonPath('verification.destination', 'ana@example.com')
+            ->assertJsonMissing(['token']);
+
+        // Se mandó un código nuevo para confirmar desde la pantalla de login.
+        $this->assertDatabaseHas('codigos_verificacion_contacto', ['destino' => 'ana@example.com', 'canal' => 'email']);
+    }
+
+    public function test_el_correo_de_codigo_lleva_la_plantilla_de_la_marca(): void
+    {
+        $html = app(\App\Services\ContactVerificationService::class)->renderHtml(
+            'Confirma tu correo — AgroLink', 'texto', ['code' => '482915', 'title' => 'Confirma tu correo'],
+        );
+        $this->assertStringContainsString('Confirma tu correo', $html);
+        $this->assertStringContainsString('El mercado del campo', $html);
+        foreach (str_split('482915') as $d) {
+            $this->assertStringContainsString(">{$d}</div>", $html);
+        }
     }
 
     public function test_login_correcto_e_incorrecto(): void
     {
-        $this->register()->assertCreated();
+        $this->registerAndVerify();
 
         $this->postJson('/api/login', ['email' => 'ana@example.com', 'password' => 'Secreta123', 'device_name' => 'test'])
             ->assertOk()->assertJsonStructure(['user', 'token']);

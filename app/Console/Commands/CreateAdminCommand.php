@@ -40,6 +40,11 @@ class CreateAdminCommand extends Command
             ]);
         }
 
+        // La cuenta la crea quien opera el servidor: el correo se da por confirmado.
+        if (! $user->correo_verificado_en) {
+            $user->forceFill(['correo_verificado_en' => now()])->save();
+        }
+
         // Moderador es solo moderador: se reemplazan otros roles. Administrador se suma.
         $rol === 'moderador' ? $user->syncRoles([$rol]) : $user->assignRole($rol);
 

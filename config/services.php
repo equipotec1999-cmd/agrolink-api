@@ -38,6 +38,9 @@ return [
 
     // Brevo (gratis, 300 correos/día): basta verificar UN correo remitente (p. ej. un Gmail) y envía
     // a cualquier destinatario. Va por API HTTPS porque Render gratis bloquea los puertos SMTP.
+    // Emblema que aparece en los correos (opcional; por defecto se sirve desde la propia API).
+    'mail_logo_url' => env('MAIL_LOGO_URL'),
+
     'brevo' => [
         'key' => env('BREVO_API_KEY'),
         'from_email' => env('BREVO_FROM_EMAIL', env('MAIL_FROM_ADDRESS')),

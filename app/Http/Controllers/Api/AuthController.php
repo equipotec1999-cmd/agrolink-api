@@ -17,11 +17,17 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request, \App\Services\ContactVerificationService $verify)
     {
-        $user = DB::transaction(function () use ($request) {
+        $email = $request->input('email'); // ya en minúsculas (RegisterRequest)
+
+        $user = DB::transaction(function () use ($request, $email) {
+            // Un registro anterior con este correo que nunca se confirmó se descarta:
+            // así nadie puede «apartar» un correo ajeno y quien se equivocó puede volver a empezar.
+            User::whereRaw('lower(correo) = ?', [$email])->whereNull('correo_verificado_en')->delete();
+
             $user = User::create([
                 'nombre' => $request->string('name'),
                 'apellidos' => $request->input('lastname'),
-                'correo' => $request->input('email'),
+                'correo' => $email,
                 'telefono' => $request->input('phone'),
                 'contrasena' => $request->string('password'),
             ]);
@@ -84,7 +90,9 @@ class AuthController extends Controller
             'destination' => ['required', 'string', 'max:180'],
         ]);
 
-        $user = User::where('correo', $data['destination'])->first();
+        $user = User::whereRaw('lower(correo) = ?', [strtolower(trim($data['destination']))])
+            ->whereNull('correo_verificado_en')
+            ->first();
         if (! $user) {
             // Respuesta genérica para no revelar si existe o no la cuenta.
             return response()->json(['message' => 'Si el contacto existe, enviamos un nuevo código.']);
@@ -94,9 +102,9 @@ class AuthController extends Controller
         return response()->json(['message' => 'Código reenviado.']);
     }
 
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request, \App\Services\ContactVerificationService $verify)
     {
-        $user = User::where('correo', $request->string('email'))->first();
+        $user = User::whereRaw('lower(correo) = ?', [strtolower(trim((string) $request->string('email')))])->first();
 
         // Mensaje genérico a propósito: no revela si falló el correo o la contraseña.
         if (! $user || ! Hash::check($request->string('password'), $user->contrasena)) {
@@ -108,6 +116,20 @@ class AuthController extends Controller
         if ($user->isBanned()) {
             throw ValidationException::withMessages([
                 'email' => ['Esta cuenta fue eliminada por incumplir las normas de AgroLink.'],
+            ]);
+        }
+
+        // Correo sin confirmar: no hay sesión. Se manda un código nuevo y la app abre la pantalla para escribirlo.
+        if (config('app.verificar_correo') && ! $user->correo_verificado_en) {
+            $verify->send($user, 'email', $user->correo);
+
+            return response()->json([
+                'requires_verification' => true,
+                'verification' => [
+                    'channel' => 'email',
+                    'destination' => $user->correo,
+                    'expires_in_minutes' => 15,
+                ],
             ]);
         }
 
@@ -169,6 +191,10 @@ class AuthController extends Controller
         ]);
         $user = $verify->verifyPasswordReset(strtolower(trim($data['email'])), $data['code']);
         $user->forceFill(['contrasena' => $data['password']])->save();
+        // El código llegó a su correo: eso también lo confirma.
+        if (! $user->correo_verificado_en) {
+            $user->forceFill(['correo_verificado_en' => now()])->save();
+        }
         // Revocar todos los tokens activos para forzar un inicio de sesión fresco.
         $user->tokens()->delete();
         return response()->json(['message' => 'Contraseña actualizada.']);
