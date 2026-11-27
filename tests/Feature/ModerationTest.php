@@ -225,6 +225,7 @@ class ModerationTest extends ApiTestCase
             ->assertNoContent();
 
         $this->assertTrue($target->fresh()->isSuspended());
+        $target = $target->fresh();
         $this->as($target)->getJson('/api/notifications')->assertOk();
         $this->as($target)->postJson("/api/users/{$this->makeUser()->id}/report", ['reason' => 'otro', 'description' => 'Intento durante sanción'])->assertForbidden();
         $ids = collect($this->as($this->makeUser())->getJson('/api/listings')->json('data'))->pluck('id');

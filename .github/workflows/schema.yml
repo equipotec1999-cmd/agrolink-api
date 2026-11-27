@@ -45,7 +45,10 @@ jobs:
           php artisan db:seed --class=CatalogSeeder --force
       - name: Volcar esquema y catálogo
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16 >/dev/null
+          # El repo por defecto del runner ya no trae postgresql-client-16: se agrega el oficial (PGDG).
+          sudo apt-get install -y -qq postgresql-common >/dev/null
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y -qq postgresql-client-16 >/dev/null
           export PGPASSWORD=postgres
           pg_dump -h 127.0.0.1 -U postgres -d agrolink --schema-only --no-owner --no-privileges \
             --exclude-schema=tiger --exclude-schema=tiger_data --exclude-schema=topology \
