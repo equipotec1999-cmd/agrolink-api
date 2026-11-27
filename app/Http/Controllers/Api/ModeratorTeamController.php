@@ -25,7 +25,7 @@ class ModeratorTeamController extends Controller
     private function owner(Request $request): User
     {
         $user = $request->user();
-        abort_unless($user->isOwner(), 403, 'Solo la cuenta dueña de AgroLink administra moderadores.');
+        abort_unless($user->isOwner(), 403, 'Solo el dueño de AgroLink administra moderadores.');
 
         return $user;
     }
