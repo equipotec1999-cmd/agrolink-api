@@ -78,6 +78,15 @@ class User extends Authenticatable
     /** Permisos que convierten a una cuenta en "administrativa" y exigen 2FA. */
     private const ADMIN_PERMISSIONS = ['manage users', 'manage catalog', 'manage compliance rules', 'view audit logs'];
 
+    /** La cuenta dueña de AgroLink: la única que administra moderadores. */
+    public function isOwner(): bool
+    {
+        $owner = config('agrolink.owner_email');
+
+        return $owner !== '' && strtolower(trim((string) $this->correo)) === $owner
+            && $this->correo_verificado_en !== null;
+    }
+
     public function needsTwoFactor(): bool
     {
         foreach (self::ADMIN_PERMISSIONS as $permission) {

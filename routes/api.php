@@ -162,6 +162,14 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
         });
     });
 
+    // Equipo de moderación: solo la cuenta dueña lo administra (se valida en el controlador).
+    Route::post('/me/moderator-invite-code', [\App\Http\Controllers\Api\ModeratorTeamController::class, 'inviteCode'])->middleware('throttle:6,1');
+    Route::prefix('team')->middleware('two-factor')->group(function () {
+        Route::get('/moderators', [\App\Http\Controllers\Api\ModeratorTeamController::class, 'index']);
+        Route::post('/moderators', [\App\Http\Controllers\Api\ModeratorTeamController::class, 'store'])->middleware('throttle:10,1');
+        Route::delete('/moderators/{user}', [\App\Http\Controllers\Api\ModeratorTeamController::class, 'destroy']);
+    });
+
     // Administración (permiso + verificación en dos pasos, siempre).
     Route::prefix('admin')->middleware(['two-factor', 'can:manage compliance rules'])->group(function () {
         Route::get('/compliance-rules', [ComplianceRuleController::class, 'index']);

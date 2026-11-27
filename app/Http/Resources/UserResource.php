@@ -44,6 +44,8 @@ class UserResource extends JsonResource
             'seller_verified' => (bool) $this->sellerProfile?->verificado,
             'can_review_documents' => $this->can('moderate documents'),
             'can_moderate' => $this->can('moderate listings') || $this->can('resolve reports'),
+            // Solo la dueña de AgroLink ve y administra la lista de moderadores.
+            'is_owner' => $this->isOwner(),
             // Aviso de privacidad / términos: la app pide aceptarlos si la versión cambió.
             'terms_version' => $this->terminos_version,
             'terms_current_version' => config('legal.version'),
