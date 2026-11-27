@@ -64,10 +64,25 @@ class ListingService
                 'price_type' => 'tipo_precio', 'quantity' => 'cantidad', 'unit' => 'unidad',
                 'negotiable' => 'negociable',
             ];
+            $antes = [
+                'titulo' => trim((string) $listing->titulo),
+                'descripcion' => trim((string) $listing->descripcion),
+            ];
             foreach ($columnas as $clave => $columna) {
                 if (array_key_exists($clave, $data)) {
                     $listing->{$columna} = $data[$clave];
                 }
+            }
+
+            // Cambiar el título o la descripción de una publicación visible la manda otra vez
+            // a revisión (queda oculta hasta que un moderador la apruebe). Precio, cantidad y
+            // «negociable» se pueden ajustar sin revisión.
+            $cambioPrincipal = trim((string) $listing->titulo) !== $antes['titulo']
+                || trim((string) $listing->descripcion) !== $antes['descripcion'];
+            if ($cambioPrincipal && $listing->estatus === 'publicada') {
+                $listing->estatus = 'en_revision';
+                $listing->estatus_moderacion = 'pendiente';
+                $listing->motivo_moderacion = null;
             }
             $listing->save();
 

@@ -7,6 +7,22 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class ListingResource extends JsonResource
 {
+    /** Un documento de la publicación; con $withUrl incluye el enlace firmado para abrirlo. */
+    public static function documentArray(\App\Models\ListingDocument $d, bool $withUrl): array
+    {
+        return [
+            'id' => $d->id,
+            'name' => $d->nombre,
+            'status' => $d->estatus,
+            'note' => $d->nota,
+            'url' => $withUrl
+                ? url(\Illuminate\Support\Facades\URL::temporarySignedRoute(
+                    'listing-documents.file', now()->addMinutes(30), ['document' => $d->id], absolute: false,
+                ))
+                : null,
+        ];
+    }
+
     public function toArray(Request $request): array
     {
         return [
@@ -59,10 +75,13 @@ class ListingResource extends JsonResource
             ]),
             'attributes' => $this->atributos_cache,
             'media' => ListingMediaResource::collection($this->whenLoaded('media')),
-            'documents' => $this->whenLoaded('documents', fn () => $this->documents->map(fn ($d) => [
-                'name' => $d->nombre,
-                'status' => $d->estatus,
-            ])),
+            'documents' => $this->whenLoaded('documents', function () use ($request) {
+                // El archivo solo lo abren el dueño y moderación (enlace firmado de 30 min).
+                $u = $request->user('sanctum');
+                $canOpen = $u && ($u->id === $this->usuario_id || $u->can('moderate listings') || $u->can('moderate documents'));
+
+                return $this->documents->map(fn ($d) => self::documentArray($d, (bool) $canOpen))->values();
+            }),
             'created_at' => $this->creado_en,
         ];
     }

@@ -42,7 +42,7 @@ class ModerationController extends Controller
     {
         $listings = Listing::query()
             ->with([
-                'productType', 'user.sellerProfile', 'media',
+                'productType', 'user.sellerProfile', 'media', 'documents',
                 'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
                     DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
                     DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
@@ -82,6 +82,12 @@ class ModerationController extends Controller
         }
         $wasInReview = $listing->estatus === 'en_revision';
         $listing->update($update);
+        // Al aprobar, el moderador revisó también los documentos pendientes que vio en la tarjeta.
+        $listing->documents()->where('estatus', 'pendiente')->update([
+            'estatus' => 'verified',
+            'revisado_por' => $request->user()->id,
+            'revisado_en' => now(),
+        ]);
         $this->audit($request, 'listing.approved', 'listing', $listing->id, ['antes' => $before]);
         if ($wasInReview) {
             NotificationService::listingModerated('listing_approved', $listing, null);

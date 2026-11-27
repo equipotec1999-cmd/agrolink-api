@@ -61,6 +61,10 @@ Route::get('/market/prices', [MarketController::class, 'prices'])->middleware('t
 // Listings: lectura pública; escritura requiere sesión.
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
+// Archivo de un documento: enlace firmado y temporal que solo reciben el dueño y moderación.
+Route::get('/listing-documents/{document}/file', [ListingController::class, 'documentFile'])
+    ->middleware('signed:relative')
+    ->name('listing-documents.file');
 
 Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::get('/my/listings', [ListingController::class, 'mine']);
@@ -72,6 +76,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/listings/{listing}/archive', [ListingController::class, 'archive']);
     Route::post('/listings/{listing}/media', [ListingController::class, 'uploadMedia']);
     Route::delete('/listings/{listing}/media/{media}', [ListingController::class, 'destroyMedia']);
+    Route::post('/listings/{listing}/documents', [ListingController::class, 'storeDocument'])->middleware('throttle:20,1');
+    Route::delete('/listings/{listing}/documents/{document}', [ListingController::class, 'destroyDocument']);
 
     // Búsquedas guardadas.
     Route::get('/saved-searches', [SavedSearchController::class, 'index']);

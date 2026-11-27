@@ -9,12 +9,14 @@ use App\Http\Requests\Listing\UpdateListingRequest;
 use App\Http\Resources\ListingMediaResource;
 use App\Http\Resources\ListingResource;
 use App\Models\Listing;
+use App\Models\ListingDocument;
 use App\Models\ListingMedia;
 use App\Models\User;
 use App\Services\ListingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ListingController extends Controller
 {
@@ -72,7 +74,7 @@ class ListingController extends Controller
     {
         $listings = Listing::query()
             ->with([
-                'productType', 'user.sellerProfile', 'media',
+                'productType', 'user.sellerProfile', 'media', 'documents',
                 'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
                     DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
                     DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
@@ -87,13 +89,17 @@ class ListingController extends Controller
     }
 
     /**
-     * Reenviar a revisión una publicación rechazada o suspendida (ya corregida). Queda oculta
-     * (`pending_review`) hasta que un moderador la apruebe.
+     * Reenviar a revisión una publicación rechazada o suspendida (ya corregida), o reactivar una
+     * archivada o vencida. Queda oculta (`en_revision`) hasta que un moderador la apruebe.
      */
     public function resubmit(Request $request, Listing $listing)
     {
         $this->authorize('publish', $listing);
-        abort_unless(in_array($listing->estatus, ['rechazada', 'suspended'], true), 422, 'Solo se pueden reenviar publicaciones rechazadas o suspendidas.');
+        abort_unless(
+            in_array($listing->estatus, ['rechazada', 'suspended', 'archivada', 'vencida'], true),
+            422,
+            'Solo se pueden reenviar publicaciones rechazadas, suspendidas, archivadas o vencidas.',
+        );
 
         $listing->update(['estatus' => 'en_revision', 'estatus_moderacion' => 'pendiente']);
 
@@ -148,9 +154,13 @@ class ListingController extends Controller
     {
         $this->authorize('update', $listing);
 
+        $wasPublic = $listing->estatus === 'publicada';
         $listing = $this->listings->update($listing, $request->validated());
 
-        return new ListingResource($listing);
+        return (new ListingResource($listing->load(['media', 'documents'])))->additional([
+            // La app avisa «tus cambios pasan a revisión» cuando esto es true.
+            'sent_to_review' => $wasPublic && $listing->estatus === 'en_revision',
+        ]);
     }
 
     public function destroy(Listing $listing)
@@ -218,5 +228,66 @@ class ListingController extends Controller
         $media->delete();
 
         return response()->json(['message' => 'Foto eliminada.']);
+    }
+
+    /** Máximo de documentos por publicación. */
+    private const MAX_DOCUMENTS = 5;
+
+    /**
+     * Sube un documento (PDF o imagen) a la publicación. Queda «pendiente» hasta que un
+     * moderador lo revise; nunca se da por válido solo por subirlo.
+     */
+    public function storeDocument(Request $request, Listing $listing)
+    {
+        $this->authorize('update', $listing);
+        $data = $request->validate([
+            'document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],
+            'name' => ['nullable', 'string', 'max:120'],
+        ], [
+            'document.mimes' => 'El documento debe ser PDF o imagen (JPG, PNG, WEBP).',
+            'document.max' => 'El documento pesa más de 10 MB.',
+        ]);
+        abort_if($listing->documents()->count() >= self::MAX_DOCUMENTS, 422, 'Puedes subir hasta '.self::MAX_DOCUMENTS.' documentos por publicación.');
+
+        $file = $request->file('document');
+        $path = $file->store("listings/{$listing->id}/docs", config('filesystems.default'));
+        abort_if($path === false, 502, 'No se pudo guardar el documento.');
+
+        $name = trim((string) ($data['name'] ?? '')) ?: pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $name = Str::limit(trim(preg_replace('/[\\x00-\\x1F]+/', ' ', $name)) ?: 'Documento', 120, '');
+        $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension());
+
+        $doc = $listing->documents()->create([
+            'nombre' => $ext ? "{$name}.{$ext}" : $name,
+            'ruta_almacenamiento' => $path,
+            'estatus' => 'pendiente',
+        ]);
+
+        return response()->json(['data' => ListingResource::documentArray($doc, true)], 201);
+    }
+
+    public function destroyDocument(Listing $listing, ListingDocument $document)
+    {
+        $this->authorize('update', $listing);
+        abort_unless($document->publicacion_id === $listing->id, 404);
+
+        Storage::disk(config('filesystems.default'))->delete($document->ruta_almacenamiento);
+        $document->delete();
+
+        return response()->json(['message' => 'Documento eliminado.']);
+    }
+
+    /**
+     * Archivo del documento por enlace firmado y temporal (lo genera ListingResource solo para el
+     * dueño y moderación). Así la app lo abre en el navegador o visor de PDF del celular.
+     */
+    public function documentFile(ListingDocument $document)
+    {
+        $disk = Storage::disk(config('filesystems.default'));
+        abort_unless($disk->exists($document->ruta_almacenamiento), 404);
+
+        return $disk->response($document->ruta_almacenamiento, $document->nombre, [
+            'Cache-Control' => 'private, max-age=600',
+        ], 'inline');
     }
 }
