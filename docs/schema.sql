@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict hAmKDATPHxDkVfA0vNvTASqRmFjC4Rhc0qshb8sDVPEmahHwif3WkTXcslTZegF
+\restrict iOtW98xUYoi7z80MZpReAtgMl2BIBHly0Fldcfc86cxhhomYnqn8zXomQOaqM3a
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
--- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+5)
+-- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -499,6 +499,48 @@ ALTER SEQUENCE public.dim_usuario_usuario_sk_seq OWNED BY public.dim_usuario.usu
 
 
 --
+-- Name: disputas; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.disputas (
+    id bigint NOT NULL,
+    operacion_id bigint NOT NULL,
+    abierta_por_id bigint NOT NULL,
+    motivo character varying(40) NOT NULL,
+    descripcion text NOT NULL,
+    respuesta text,
+    respondida_en timestamp(0) without time zone,
+    estatus_operacion character varying(30) NOT NULL,
+    estatus character varying(20) DEFAULT 'abierta'::character varying NOT NULL,
+    decision character varying(20),
+    nota_resolucion text,
+    resuelta_por_id bigint,
+    resuelta_en timestamp(0) without time zone,
+    creado_en timestamp(0) without time zone,
+    actualizado_en timestamp(0) without time zone
+);
+
+
+--
+-- Name: disputas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.disputas_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: disputas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.disputas_id_seq OWNED BY public.disputas.id;
+
+
+--
 -- Name: documentos_publicacion; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -853,6 +895,9 @@ CREATE TABLE public.mensajes (
     leido_en timestamp(0) without time zone,
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
+    ubicacion_lat numeric(9,6),
+    ubicacion_lng numeric(9,6),
+    ubicacion_etiqueta character varying(120),
     CONSTRAINT mensajes_cuerpo_u_oferta_chk CHECK (((cuerpo IS NOT NULL) OR (oferta_id IS NOT NULL)))
 );
 
@@ -1618,7 +1663,9 @@ CREATE TABLE public.usuarios (
     suspendido_hasta timestamp(0) without time zone,
     motivo_suspension character varying(500),
     motivo_eliminacion character varying(500),
-    advertencias smallint DEFAULT '0'::smallint NOT NULL
+    advertencias smallint DEFAULT '0'::smallint NOT NULL,
+    terminos_version character varying(20),
+    terminos_aceptados_en timestamp(0) without time zone
 );
 
 
@@ -1779,6 +1826,13 @@ ALTER TABLE ONLY public.dim_ubicacion ALTER COLUMN ubicacion_sk SET DEFAULT next
 --
 
 ALTER TABLE ONLY public.dim_usuario ALTER COLUMN usuario_sk SET DEFAULT nextval('public.dim_usuario_usuario_sk_seq'::regclass);
+
+
+--
+-- Name: disputas id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disputas ALTER COLUMN id SET DEFAULT nextval('public.disputas_id_seq'::regclass);
 
 
 --
@@ -2136,6 +2190,22 @@ ALTER TABLE ONLY public.dim_usuario
 
 ALTER TABLE ONLY public.dim_usuario
     ADD CONSTRAINT dim_usuario_usuario_id_unique UNIQUE (usuario_id);
+
+
+--
+-- Name: disputas disputas_operacion_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disputas
+    ADD CONSTRAINT disputas_operacion_id_unique UNIQUE (operacion_id);
+
+
+--
+-- Name: disputas disputas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disputas
+    ADD CONSTRAINT disputas_pkey PRIMARY KEY (id);
 
 
 --
@@ -2621,6 +2691,13 @@ CREATE INDEX conversaciones_vendedor_id_index ON public.conversaciones USING btr
 
 
 --
+-- Name: disputas_abiertas_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX disputas_abiertas_idx ON public.disputas USING btree (creado_en) WHERE ((estatus)::text = 'abierta'::text);
+
+
+--
 -- Name: documentos_publicacion_publicacion_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2989,6 +3066,30 @@ ALTER TABLE ONLY public.conversaciones
 
 ALTER TABLE ONLY public.conversaciones
     ADD CONSTRAINT conversaciones_vendedor_id_foreign FOREIGN KEY (vendedor_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: disputas disputas_abierta_por_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disputas
+    ADD CONSTRAINT disputas_abierta_por_id_foreign FOREIGN KEY (abierta_por_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
+-- Name: disputas disputas_operacion_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disputas
+    ADD CONSTRAINT disputas_operacion_id_foreign FOREIGN KEY (operacion_id) REFERENCES public.operaciones(id) ON DELETE CASCADE;
+
+
+--
+-- Name: disputas disputas_resuelta_por_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.disputas
+    ADD CONSTRAINT disputas_resuelta_por_id_foreign FOREIGN KEY (resuelta_por_id) REFERENCES public.usuarios(id) ON DELETE SET NULL;
 
 
 --
@@ -3547,5 +3648,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hAmKDATPHxDkVfA0vNvTASqRmFjC4Rhc0qshb8sDVPEmahHwif3WkTXcslTZegF
+\unrestrict iOtW98xUYoi7z80MZpReAtgMl2BIBHly0Fldcfc86cxhhomYnqn8zXomQOaqM3a
 
