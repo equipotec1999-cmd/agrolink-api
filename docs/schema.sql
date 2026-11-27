@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict M1WbsLt4S0etaEIhWw6aXyEpKk5u5KCbLgRKY3tjddkVztTVpxRV0XMbW1cSxjD
+\restrict XFVKri5PWoOEmBSXdjupzusM8HUIckibM5mI9OHWk4HvrJkp4q9MZDu2DvaQPzT
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+5)
@@ -790,6 +790,39 @@ CREATE TABLE public.hecho_reportes (
     motivo character varying(40) NOT NULL,
     horas_a_resolver integer
 );
+
+
+--
+-- Name: invitaciones_moderador; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invitaciones_moderador (
+    id bigint NOT NULL,
+    usuario_id bigint NOT NULL,
+    codigo_hash character varying(255) NOT NULL,
+    intentos smallint DEFAULT '0'::smallint NOT NULL,
+    expira_en timestamp(0) without time zone NOT NULL,
+    creado_en timestamp(0) without time zone
+);
+
+
+--
+-- Name: invitaciones_moderador_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.invitaciones_moderador_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: invitaciones_moderador_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.invitaciones_moderador_id_seq OWNED BY public.invitaciones_moderador.id;
 
 
 --
@@ -1872,6 +1905,13 @@ ALTER TABLE ONLY public.favoritos ALTER COLUMN id SET DEFAULT nextval('public.fa
 
 
 --
+-- Name: invitaciones_moderador id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invitaciones_moderador ALTER COLUMN id SET DEFAULT nextval('public.invitaciones_moderador_id_seq'::regclass);
+
+
+--
 -- Name: jobs id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2295,6 +2335,22 @@ ALTER TABLE ONLY public.hecho_publicaciones
 
 ALTER TABLE ONLY public.hecho_reportes
     ADD CONSTRAINT hecho_reportes_pkey PRIMARY KEY (reporte_id);
+
+
+--
+-- Name: invitaciones_moderador invitaciones_moderador_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invitaciones_moderador
+    ADD CONSTRAINT invitaciones_moderador_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: invitaciones_moderador invitaciones_moderador_usuario_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invitaciones_moderador
+    ADD CONSTRAINT invitaciones_moderador_usuario_id_unique UNIQUE (usuario_id);
 
 
 --
@@ -3318,6 +3374,14 @@ ALTER TABLE ONLY public.hecho_reportes
 
 
 --
+-- Name: invitaciones_moderador invitaciones_moderador_usuario_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invitaciones_moderador
+    ADD CONSTRAINT invitaciones_moderador_usuario_id_foreign FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
 -- Name: medios_publicacion medios_publicacion_publicacion_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3649,5 +3713,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict M1WbsLt4S0etaEIhWw6aXyEpKk5u5KCbLgRKY3tjddkVztTVpxRV0XMbW1cSxjD
+\unrestrict XFVKri5PWoOEmBSXdjupzusM8HUIckibM5mI9OHWk4HvrJkp4q9MZDu2DvaQPzT
 
