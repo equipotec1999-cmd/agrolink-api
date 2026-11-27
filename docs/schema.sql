@@ -2,14 +2,15 @@
 -- PostgreSQL database dump
 --
 
-\restrict 1bgGIHi6RA0ohWOMr73vgTbB6h92gsG5xcuke0bSpPcb9mgIZX8iLPHPsJ7ZWSd
+\restrict QMPXB0xMmN9bghPNvdFxNB31qJI476gZy9EEIia7JKHvXoij8eOXWmwoxBFuKHu
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
--- Dumped by pg_dump version 16.15 (Ubuntu 16.15-1.pgdg24.04+2)
+-- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+2)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -1029,6 +1030,10 @@ CREATE TABLE public.operaciones (
     estatus character varying(255) DEFAULT 'oferta_aceptada'::character varying NOT NULL,
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
+    pin_entrega text,
+    pin_intentos smallint DEFAULT '0'::smallint NOT NULL,
+    entregado_en timestamp(0) without time zone,
+    motivo_cancelacion character varying(255),
     CONSTRAINT operaciones_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['oferta_aceptada'::character varying, 'pendiente_pago'::character varying, 'pagado'::character varying, 'preparando_entrega'::character varying, 'en_transito'::character varying, 'entregado'::character varying, 'confirmado'::character varying, 'completado'::character varying, 'cancelado'::character varying, 'disputa'::character varying])::text[])))
 );
 
@@ -1307,6 +1312,7 @@ CREATE TABLE public.reportes (
     nota_resolucion character varying(500),
     creado_en timestamp(0) without time zone,
     actualizado_en timestamp(0) without time zone,
+    accion character varying(30),
     CONSTRAINT reportes_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['abierto'::character varying, 'investigating'::character varying, 'resuelto'::character varying, 'dismissed'::character varying])::text[]))),
     CONSTRAINT reportes_motivo_check CHECK (((motivo)::text = ANY ((ARRAY['fraude'::character varying, 'informacion_falsa'::character varying, 'producto_inexistente'::character varying, 'documentacion_sospechosa'::character varying, 'publicacion_duplicada'::character varying, 'conducta_inapropiada'::character varying, 'producto_no_permitido'::character varying, 'otro'::character varying])::text[])))
 );
@@ -1608,7 +1614,11 @@ CREATE TABLE public.usuarios (
     eliminado_en timestamp(0) without time zone,
     dos_factores_ultimo_paso bigint,
     apellidos character varying(150),
-    telefono_verificado_en timestamp(0) without time zone
+    telefono_verificado_en timestamp(0) without time zone,
+    suspendido_hasta timestamp(0) without time zone,
+    motivo_suspension character varying(500),
+    motivo_eliminacion character varying(500),
+    advertencias smallint DEFAULT '0'::smallint NOT NULL
 );
 
 
@@ -2835,6 +2845,13 @@ CREATE INDEX reportes_reportable_tipo_reportable_id_index ON public.reportes USI
 
 
 --
+-- Name: resenas_evaluado_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX resenas_evaluado_idx ON public.resenas USING btree (evaluado_id, id DESC);
+
+
+--
 -- Name: sessions_last_activity_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2881,6 +2898,13 @@ CREATE INDEX tokens_dispositivo_usuario_id_index ON public.tokens_dispositivo US
 --
 
 CREATE INDEX ubicaciones_publicacion_aprox_gix ON public.ubicaciones_publicacion USING gist (ubicacion_aproximada);
+
+
+--
+-- Name: usuarios_suspendidos_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX usuarios_suspendidos_idx ON public.usuarios USING btree (suspendido_hasta) WHERE (suspendido_hasta IS NOT NULL);
 
 
 --
@@ -3509,5 +3533,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 1bgGIHi6RA0ohWOMr73vgTbB6h92gsG5xcuke0bSpPcb9mgIZX8iLPHPsJ7ZWSd
+\unrestrict QMPXB0xMmN9bghPNvdFxNB31qJI476gZy9EEIia7JKHvXoij8eOXWmwoxBFuKHu
 
