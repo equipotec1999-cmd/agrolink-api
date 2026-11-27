@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ybD7nmIuhO0dSUZ8GjNfzs0jfpHEFFvOGBLPyeW1fzb4rlywMdqsFrivn1NfXFX
+\restrict M1WbsLt4S0etaEIhWw6aXyEpKk5u5KCbLgRKY3tjddkVztTVpxRV0XMbW1cSxjD
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+5)
@@ -1491,7 +1491,8 @@ CREATE TABLE public.solicitudes_verificacion (
     revisado_por bigint,
     revisado_en timestamp(0) without time zone,
     creado_en timestamp(0) without time zone,
-    actualizado_en timestamp(0) without time zone
+    actualizado_en timestamp(0) without time zone,
+    felicitacion_vista_en timestamp(0) without time zone
 );
 
 
@@ -3648,5 +3649,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ybD7nmIuhO0dSUZ8GjNfzs0jfpHEFFvOGBLPyeW1fzb4rlywMdqsFrivn1NfXFX
+\unrestrict M1WbsLt4S0etaEIhWw6aXyEpKk5u5KCbLgRKY3tjddkVztTVpxRV0XMbW1cSxjD
 
