@@ -23,10 +23,11 @@ class OfferController extends Controller
     }
 
     /**
-     * Envía una oferta (mensaje tipo oferta). Reglas:
-     * - Solo una oferta abierta por conversación.
-     * - Si la abierta es de la otra persona, la nueva es una CONTRAOFERTA y la anterior pasa a `countered`.
-     * - Si la abierta es mía, hay que cancelarla antes de mandar otra.
+     * Envía una oferta (mensaje tipo oferta). Reglas (una oferta por turno):
+     * - Si hay una oferta abierta, nadie manda otra: quien la recibió la acepta o la rechaza,
+     *   y quien la mandó espera respuesta (o la cancela).
+     * - Mientras haya una operación en curso en el chat no se hacen ofertas nuevas.
+     * - La primera oferta después de rechazar la de la otra persona cuenta como contraoferta (aviso).
      */
     public function store(StoreOfferRequest $request, Conversation $conversation)
     {
@@ -49,10 +50,19 @@ class OfferController extends Controller
 
             $open = Offer::where('conversacion_id', $conversation->id)->where('estatus', 'enviada')->first();
             if ($open) {
-                abort_if($open->remitente_id === $me, 422, 'Ya tienes una oferta abierta. Cancélala antes de enviar otra.');
-                $open->update(['estatus' => 'contraoferta']);
-                $isCounter = true;
+                abort_if($open->remitente_id === $me, 422,
+                    'Ya hiciste una oferta. Espera a que la acepten o la rechacen (o cancélala) para hacer otra.');
+                abort(422, 'Tienes una oferta por responder. Acéptala o recházala antes de hacer otra.');
             }
+
+            $active = Operation::where('publicacion_id', $conversation->publicacion_id)
+                ->where('comprador_id', $conversation->comprador_id)
+                ->whereNotIn('estatus', ['completado', 'cancelado'])
+                ->exists();
+            abort_if($active, 422, 'Ya hay una operación en curso en este chat. Ábrela desde el botón «Ver operación».');
+
+            $last = Offer::where('conversacion_id', $conversation->id)->latest('id')->first();
+            $isCounter = $last && $last->remitente_id !== $me && $last->estatus === 'rechazada';
 
             $offer = Offer::create([
                 'conversacion_id' => $conversation->id,

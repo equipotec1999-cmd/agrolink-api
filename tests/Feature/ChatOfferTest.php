@@ -67,20 +67,39 @@ class ChatOfferTest extends ApiTestCase
         $this->postJson("/api/conversations/$id/offers", ['amount' => 100, 'quantity' => 10])->assertCreated();
     }
 
-    public function test_contraoferta_marca_la_anterior_como_contraofertada(): void
+    public function test_una_oferta_por_turno(): void
     {
         $seller = $this->makeUser('vendedor');
         $buyer = $this->makeUser();
         $id = $this->conversation($buyer, $this->makeListing($seller));
 
-        $first = $this->postJson("/api/conversations/$id/offers", ['amount' => 1000, 'quantity' => 2])->assertCreated();
-        $offerId = $first->json('data.offer.id') ?? $first->json('data.offer_id');
+        $this->postJson("/api/conversations/$id/offers", ['amount' => 1000, 'quantity' => 2])->assertCreated();
+        // Quien ofertó no manda otra hasta que le respondan.
+        $this->postJson("/api/conversations/$id/offers", ['amount' => 1100, 'quantity' => 2])
+            ->assertUnprocessable()->assertJsonFragment(['message' => 'Ya hiciste una oferta. Espera a que la acepten o la rechacen (o cancélala) para hacer otra.']);
+        // Quien la recibió tampoco: primero acepta o rechaza.
+        $this->as($seller)->postJson("/api/conversations/$id/offers", ['amount' => 1300, 'quantity' => 2])
+            ->assertUnprocessable()->assertJsonFragment(['message' => 'Tienes una oferta por responder. Acéptala o recházala antes de hacer otra.']);
 
-        $this->as($seller)->postJson("/api/conversations/$id/offers", ['amount' => 1300, 'quantity' => 2])->assertCreated();
-
-        $this->assertDatabaseHas('ofertas', ['conversacion_id' => $id, 'estatus' => 'contraoferta']);
-        $this->assertDatabaseHas('ofertas', ['conversacion_id' => $id, 'estatus' => 'enviada', 'monto' => 1300]);
+        $offer = \App\Models\Offer::firstOrFail();
+        $this->postJson("/api/offers/{$offer->id}/reject")->assertOk();
+        // Rechazada: ahora sí puede contraofertar.
+        $this->postJson("/api/conversations/$id/offers", ['amount' => 1300, 'quantity' => 2])->assertCreated();
         $this->assertSame(1, \App\Models\Offer::where('estatus', 'enviada')->count());
+        $this->assertDatabaseHas('notificaciones', ['notificable_id' => $buyer->id, 'tipo' => 'offer_countered']);
+    }
+
+    public function test_con_operacion_en_curso_no_hay_ofertas_nuevas(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $id = $this->conversation($buyer, $this->makeListing($seller));
+
+        $this->postJson("/api/conversations/$id/offers", ['amount' => 1000, 'quantity' => 1])->assertCreated();
+        $offer = \App\Models\Offer::firstOrFail();
+        $this->as($seller)->postJson("/api/offers/{$offer->id}/accept")->assertOk();
+
+        $this->as($buyer)->postJson("/api/conversations/$id/offers", ['amount' => 900, 'quantity' => 1])->assertUnprocessable();
     }
 
     public function test_aceptar_crea_la_operacion_con_el_total(): void
