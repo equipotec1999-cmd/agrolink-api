@@ -68,7 +68,7 @@ class CatalogSeeder extends Seeder
                 'categoria' => 'animales', 'nombre' => 'Caballos', 'icono' => 'horse', 'dias' => 45,
                 'attrs' => [
                     'raza_equino' => ['Raza', 'select', null, 'general', true, true, ['Cuarto de Milla', 'Azteca', 'Pura Sangre', 'Criollo', 'Appaloosa', 'Otra']],
-                    'sexo_equino' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra', 'Macho castrado']],
+                    'sexo_equino' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra', 'Macho castrado', 'Mixto']],
                     'edad_anios' => ['Edad', 'number', 'años', 'general', true, true, null, 0, 30],
                     'peso' => ['Peso', 'number', 'kg', 'general', false, false, null],
                     'altura' => ['Altura a la cruz', 'number', 'm', 'general', false, false, null],
@@ -85,7 +85,7 @@ class CatalogSeeder extends Seeder
                 'categoria' => 'animales', 'nombre' => 'Bovinos', 'icono' => 'cow', 'dias' => 45,
                 'attrs' => [
                     'raza_bovino' => ['Raza', 'select', null, 'general', true, true, ['Brahman', 'Suizo', 'Brahman x Suizo', 'Nelore', 'Gyr', 'Holstein', 'Charolais', 'Angus', 'Otra']],
-                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra']],
+                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra', 'Mixto']],
                     'edad_meses' => ['Edad', 'number', 'meses', 'general', true, true, null, 0, 120],
                     'peso' => ['Peso', 'number', 'kg', 'general', true, true, null, 0, 900],
                     'proposito_bovino' => ['Propósito', 'select', null, 'general', true, true, ['Engorda', 'Cría', 'Leche', 'Doble propósito', 'Pie de cría']],
@@ -101,7 +101,7 @@ class CatalogSeeder extends Seeder
                 'categoria' => 'animales', 'nombre' => 'Ovinos', 'icono' => 'sheep', 'dias' => 45,
                 'attrs' => [
                     'raza_ovino' => ['Raza', 'select', null, 'general', true, true, ['Pelibuey', 'Katahdin', 'Dorper', 'Blackbelly', 'Cruza']],
-                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra']],
+                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra', 'Mixto']],
                     'edad_meses' => ['Edad', 'number', 'meses', 'general', true, true, null, 0, 120],
                     'peso' => ['Peso', 'number', 'kg', 'general', true, true, null, 0, 900],
                     'proposito_ovino' => ['Propósito', 'select', null, 'general', true, true, ['Engorda', 'Pie de cría', 'Reproductor']],
@@ -115,7 +115,7 @@ class CatalogSeeder extends Seeder
                 'categoria' => 'animales', 'nombre' => 'Caprinos', 'icono' => 'goat', 'dias' => 45,
                 'attrs' => [
                     'raza_caprino' => ['Raza', 'select', null, 'general', true, true, ['Saanen', 'Alpina', 'Nubia', 'Boer', 'Criolla']],
-                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra']],
+                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra', 'Mixto']],
                     'edad_meses' => ['Edad', 'number', 'meses', 'general', true, true, null, 0, 120],
                     'peso' => ['Peso', 'number', 'kg', 'general', true, true, null, 0, 900],
                     'proposito_caprino' => ['Propósito', 'select', null, 'general', true, true, ['Leche', 'Carne', 'Pie de cría']],
@@ -129,7 +129,7 @@ class CatalogSeeder extends Seeder
                 'categoria' => 'animales', 'nombre' => 'Porcinos', 'icono' => 'pig', 'dias' => 45,
                 'attrs' => [
                     'raza_genetica_porcino' => ['Raza / genética', 'text', null, 'general', true, false, null],
-                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra']],
+                    'sexo' => ['Sexo', 'select', null, 'general', true, true, ['Macho', 'Hembra', 'Mixto']],
                     'edad_meses' => ['Edad', 'number', 'meses', 'general', true, true, null, 0, 120],
                     'peso' => ['Peso', 'number', 'kg', 'general', true, true, null, 0, 900],
                     'proposito_porcino' => ['Propósito', 'select', null, 'general', true, true, ['Engorda', 'Pie de cría', 'Semental']],
@@ -174,7 +174,7 @@ class CatalogSeeder extends Seeder
                     'tipo_miel' => ['Tipo de miel', 'select', null, 'general', true, true, ['Multifloral', 'Monofloral', 'Cremosa']],
                     'origen_floral' => ['Origen floral', 'text', null, 'general', true, false, null],
                     'fecha_cosecha' => ['Fecha de cosecha', 'date', null, 'general', true, false, null],
-                    'lote' => ['Lote', 'text', null, 'general', false, false, null],
+                    'lote' => ['Lote de producción (n.º)', 'text', null, 'general', false, false, null],
                     'extraccion' => ['Método de extracción', 'select', null, 'general', false, false, ['Centrífuga', 'Prensado']],
                     'presentacion_miel' => ['Presentación', 'select', null, 'comercial', true, false, ['Granel (tambo)', 'Cubeta', 'Frasco 1 kg', 'Frasco 500 g']],
                     'pedido_minimo' => ['Pedido mínimo', 'number', 'kg', 'comercial', false, false, null],
