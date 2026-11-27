@@ -71,20 +71,65 @@ class ReviewController extends Controller
         return response()->json(['data' => ['reviewed' => true]], 201);
     }
 
-    /** Reseñas recibidas por un vendedor (las últimas 20, con comentario primero no: simplemente recientes). */
+    /**
+     * Perfil de reputación de un vendedor: resumen (promedios, distribución de estrellas,
+     * operaciones, cancelaciones) y sus reseñas paginadas (15 por página, más recientes primero).
+     * Solo cuentan las reseñas que dejaron compradores (las que tienen ejes de vendedor).
+     */
     public function forSeller(Request $request, int $user)
     {
-        $reviews = Review::with('reviewer:id,nombre')
-            ->where('evaluado_id', $user)->whereNotNull('exactitud')
-            ->orderByDesc('id')->limit(20)->get();
+        $seller = \App\Models\User::with('sellerProfile')->findOrFail($user);
+        abort_if($seller->isBanned(), 404);
 
-        return response()->json(['data' => $reviews->map(fn ($r) => [
-            'author' => $r->reviewer->nombre,
-            'accuracy' => $r->exactitud,
-            'fulfillment' => $r->cumplimiento,
-            'communication' => $r->comunicacion,
-            'comment' => $r->comentario,
-            'created_at' => $r->creado_en,
-        ])]);
+        $base = Review::query()->where('evaluado_id', $seller->id)->whereNotNull('exactitud');
+
+        $stats = (clone $base)->selectRaw(
+            'COUNT(*) AS total,
+             ROUND(AVG((exactitud + cumplimiento + comunicacion) / 3.0)::numeric, 2) AS promedio,
+             ROUND(AVG(exactitud)::numeric, 2) AS exactitud,
+             ROUND(AVG(cumplimiento)::numeric, 2) AS cumplimiento,
+             ROUND(AVG(comunicacion)::numeric, 2) AS comunicacion'
+        )->first();
+
+        // Estrellas de cada reseña = promedio de sus tres ejes, redondeado.
+        $dist = (clone $base)
+            ->selectRaw('ROUND((exactitud + cumplimiento + comunicacion) / 3.0) AS estrellas, COUNT(*) AS n')
+            ->groupByRaw('1')->pluck('n', 'estrellas');
+
+        $cancellations = \App\Models\OperationEvent::query()
+            ->where('estatus_nuevo', 'cancelado')
+            ->where('actor_id', $seller->id)
+            ->whereHas('operation', fn ($q) => $q->where('vendedor_id', $seller->id))
+            ->count();
+
+        $page = $base->with('reviewer:id,nombre')->orderByDesc('id')->paginate(15);
+
+        return response()->json([
+            'summary' => [
+                'id' => $seller->id,
+                'name' => $seller->nombre,
+                'is_verified' => (bool) $seller->sellerProfile?->verificado,
+                'member_since' => $seller->creado_en?->year,
+                'completed_operations' => (int) ($seller->sellerProfile?->operaciones_completadas ?? 0),
+                'cancellations' => $cancellations,
+                'reviews_count' => (int) $stats->total,
+                'average' => (float) ($stats->promedio ?? 0),
+                'accuracy' => (float) ($stats->exactitud ?? 0),
+                'fulfillment' => (float) ($stats->cumplimiento ?? 0),
+                'communication' => (float) ($stats->comunicacion ?? 0),
+                'distribution' => collect([5, 4, 3, 2, 1])->mapWithKeys(fn ($n) => [$n => (int) ($dist[$n] ?? 0)]),
+            ],
+            'data' => collect($page->items())->map(fn ($r) => [
+                'id' => $r->id,
+                'author' => $r->reviewer?->nombre ?? 'Usuario',
+                'stars' => round(($r->exactitud + $r->cumplimiento + $r->comunicacion) / 3, 1),
+                'accuracy' => $r->exactitud,
+                'fulfillment' => $r->cumplimiento,
+                'communication' => $r->comunicacion,
+                'comment' => $r->comentario,
+                'created_at' => $r->creado_en,
+            ])->values(),
+            'meta' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage()],
+        ]);
     }
 }

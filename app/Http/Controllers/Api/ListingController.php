@@ -38,7 +38,11 @@ class ListingController extends Controller
                     DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
                 ]),
             ])
-            ->where('estatus', 'publicada');
+            ->where('estatus', 'publicada')
+            // Vendedores sancionados o eliminados no aparecen en el feed.
+            ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('usuarios as u')
+                ->whereColumn('u.id', 'publicaciones.usuario_id')
+                ->where(fn ($w) => $w->whereNotNull('u.eliminado_en')->orWhere('u.suspendido_hasta', '>', now())));
 
         if ($request->filled('product_type_id')) {
             $query->where('tipo_producto_id', $request->integer('product_type_id'));

@@ -20,6 +20,7 @@ class Report extends Modelo
         'resuelto_por',
         'resuelto_en',
         'nota_resolucion',
+        'accion',
     ];
 
     protected function casts(): array

@@ -31,7 +31,9 @@ class ListingService
                 'tipo_precio' => $data['price_type'],
                 'cantidad' => $data['quantity'],
                 'unidad' => $data['unit'],
-                'modalidad_venta' => $data['sale_mode'] ?? 'individual',
+                // Coherente con el precio: «por lote» siempre es venta por lote y viceversa
+                // (antes podían contradecirse: precio por kg marcado como lote).
+                'modalidad_venta' => ($data['price_type'] ?? null) === 'per_lot' ? 'lot' : 'individual',
                 'negociable' => $data['negotiable'] ?? false,
                 'estatus' => 'borrador',
                 'estatus_moderacion' => 'pendiente',

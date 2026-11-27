@@ -20,6 +20,28 @@ class EnsureFullSession
             abort(403, 'Completa la verificación en dos pasos para continuar.');
         }
 
+        $user = $request->user();
+        if ($user?->isBanned()) {
+            $user->tokens()->delete();
+            abort(403, 'Esta cuenta fue eliminada por incumplir las normas de AgroLink.');
+        }
+
+        // Cuenta sancionada: puede entrar y leer (ver la notificación, sus operaciones), pero no
+        // publicar, escribir, ofertar ni reportar hasta que termine la sanción.
+        if ($user?->isSuspended() && ! $request->isMethod('GET') && ! $this->allowedWhileSuspended($request)) {
+            abort(403, 'Tu cuenta está sancionada hasta el '.$user->suspendido_hasta->timezone('America/Merida')
+                ->format('d/m/Y H:i').'. Motivo: '.($user->motivo_suspension ?: 'incumplir las normas').'.');
+        }
+
         return $next($request);
+    }
+
+    /** Lo mínimo para seguir usando la cuenta durante una sanción (y cerrar operaciones ya abiertas). */
+    private function allowedWhileSuspended(Request $request): bool
+    {
+        return $request->is(
+            'api/logout', 'api/devices', 'api/devices/unregister', 'api/notifications/*',
+            'api/me/password', 'api/operations/*/transition', 'api/operations/*/deliver', 'api/operations/*/pin',
+        );
     }
 }

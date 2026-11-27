@@ -20,6 +20,21 @@ class NotificationText
         };
     }
 
+    /** Lo que se le dice a quien reportó, según la medida tomada. */
+    private static function reportOutcome(array $d): string
+    {
+        $who = $d['target_name'] ?? 'la cuenta reportada';
+
+        return match ($d['action'] ?? '') {
+            'advertir' => "Revisamos tu reporte y enviamos una advertencia a {$who}.",
+            'sancionar' => "Revisamos tu reporte y sancionamos temporalmente a {$who}.",
+            'eliminar_cuenta' => "Revisamos tu reporte y eliminamos la cuenta de {$who}.",
+            'ocultar_publicacion' => 'Revisamos tu reporte y ocultamos la publicación «'.($d['listing_title'] ?? '').'».',
+            'descartar' => 'Revisamos tu reporte y no encontramos incumplimiento de las normas. Gracias por avisarnos.',
+            default => 'Revisamos tu reporte y tomamos las medidas necesarias. Gracias por avisarnos.',
+        };
+    }
+
     /** @return array{0: string, 1: string} [título, cuerpo] */
     public static function render(string $type, array $d): array
     {
@@ -41,6 +56,10 @@ class NotificationText
             'listing_suspended' => ['Publicación suspendida', "«{$title}» fue suspendida tras un reporte.".(! empty($d['reason']) ? " Nota: {$d['reason']}" : '')],
             'operation_updated' => self::operation($actor, $title, $d['status'] ?? '', $d['reason'] ?? null),
             'review_received' => ['Nueva calificación', "$actor calificó la operación de «{$title}»."],
+            'account_warning' => ['Advertencia de moderación', 'Recibiste una advertencia por incumplir las normas de AgroLink. Motivo: '.($d['reason'] ?? 'sin especificar').'. Si se repite, tu cuenta puede ser sancionada.'],
+            'account_suspended' => ['Cuenta sancionada', 'Tu cuenta quedó sancionada hasta el '.($d['until_text'] ?? '').'. Mientras tanto no puedes publicar, escribir ni ofertar y tus publicaciones están ocultas. Motivo: '.($d['reason'] ?? 'sin especificar')],
+            'account_deleted' => ['Cuenta eliminada', 'Moderación eliminó tu cuenta por incumplir las normas de AgroLink. Motivo: '.($d['reason'] ?? 'sin especificar')],
+            'report_resolved' => ['Atendimos tu reporte', self::reportOutcome($d)],
             'verification_approved' => ['Vendedor verificado', 'Revisamos tu documentación: ya eres vendedor verificado.'],
             'verification_rejected' => ['Verificación rechazada', 'No pudimos verificar tu cuenta. Motivo: '.($d['reason'] ?? 'sin especificar')],
             default => ['Notificación', ''],

@@ -152,4 +152,24 @@ class NotificationService
     {
         self::put($userId, $type, ['reason' => $reason]);
     }
+
+    /** Aviso a la cuenta sancionada: account_warning | account_suspended | account_deleted. */
+    public static function accountSanctioned(string $type, User $user, string $reason, ?\DateTimeInterface $until = null): void
+    {
+        self::put($user->id, $type, [
+            'reason' => $reason,
+            'until' => $until?->format(DATE_ATOM),
+            'until_text' => $until ? \Carbon\Carbon::instance($until)->timezone('America/Merida')->format('d/m/Y H:i') : null,
+        ]);
+    }
+
+    /** Aviso a quien reportó: qué medida se tomó. */
+    public static function reportResolved(int $reporterId, string $action, ?string $targetName, ?string $listingTitle = null): void
+    {
+        self::put($reporterId, 'report_resolved', [
+            'action' => $action,
+            'target_name' => $targetName,
+            'listing_title' => $listingTitle,
+        ]);
+    }
 }

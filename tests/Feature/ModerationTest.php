@@ -189,4 +189,71 @@ class ModerationTest extends ApiTestCase
 
         $mod->deleteJson("/api/moderation/listings/{$lista->id}", ['reason' => 'Contenido indebido'])->assertNoContent();
     }
+
+    private function userReport(\App\Models\User $target): array
+    {
+        $reporter = $this->makeUser();
+        $this->as($reporter)->postJson("/api/users/{$target->id}/report", ['reason' => 'conducta_inapropiada', 'description' => 'Me insultó en el chat'])->assertCreated();
+
+        return [$reporter, Report::latest('id')->first()->id];
+    }
+
+    public function test_advertir_avisa_a_la_cuenta_y_al_que_reporto(): void
+    {
+        $target = $this->makeUser('vendedor');
+        [$reporter, $id] = $this->userReport($target);
+
+        $this->as($this->makeUser('moderador'))
+            ->postJson("/api/moderation/reports/{$id}/resolve", ['action' => 'advertir'])->assertUnprocessable();
+        $this->as($this->makeUser('moderador'))
+            ->postJson("/api/moderation/reports/{$id}/resolve", ['action' => 'advertir', 'note' => 'Lenguaje ofensivo'])
+            ->assertNoContent();
+
+        $this->assertSame(1, $target->fresh()->advertencias);
+        $this->assertSame('account_warning', $this->as($target)->getJson('/api/notifications')->json('data.0.type'));
+        $this->assertSame('report_resolved', $this->as($reporter)->getJson('/api/notifications')->json('data.0.type'));
+    }
+
+    public function test_sancionar_deja_la_cuenta_en_solo_lectura_y_oculta_sus_publicaciones(): void
+    {
+        $target = $this->makeUser('vendedor');
+        $listing = $this->makeListing($target);
+        [, $id] = $this->userReport($target);
+
+        $this->as($this->makeUser('moderador'))
+            ->postJson("/api/moderation/reports/{$id}/resolve", ['action' => 'sancionar', 'note' => 'Fraude reiterado', 'days' => 7])
+            ->assertNoContent();
+
+        $this->assertTrue($target->fresh()->isSuspended());
+        $this->as($target)->getJson('/api/notifications')->assertOk();
+        $this->as($target)->postJson("/api/users/{$this->makeUser()->id}/report", ['reason' => 'otro', 'description' => 'Intento durante sanción'])->assertForbidden();
+        $ids = collect($this->as($this->makeUser())->getJson('/api/listings')->json('data'))->pluck('id');
+        $this->assertNotContains($listing->id, $ids);
+    }
+
+    public function test_eliminar_cuenta_bloquea_el_login_y_suspende_publicaciones(): void
+    {
+        $target = $this->makeUser('vendedor');
+        $listing = $this->makeListing($target);
+        [, $id] = $this->userReport($target);
+
+        $this->as($this->makeUser('moderador'))
+            ->postJson("/api/moderation/reports/{$id}/resolve", ['action' => 'eliminar_cuenta', 'note' => 'Estafa comprobada'])
+            ->assertNoContent();
+
+        $this->assertTrue($target->fresh()->isBanned());
+        $this->assertSame('suspended', $listing->fresh()->estatus);
+        $this->postJson('/api/login', ['email' => $target->correo, 'password' => 'password', 'device_name' => 't'])
+            ->assertUnprocessable();
+    }
+
+    public function test_no_se_puede_sancionar_a_un_moderador(): void
+    {
+        $mod = $this->makeUser('moderador');
+        [, $id] = $this->userReport($mod);
+
+        $this->as($this->makeUser('moderador'))
+            ->postJson("/api/moderation/reports/{$id}/resolve", ['action' => 'eliminar_cuenta', 'note' => 'No debería'])
+            ->assertUnprocessable();
+    }
 }

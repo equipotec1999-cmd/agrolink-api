@@ -36,6 +36,18 @@ class User extends Authenticatable
         'codigos_recuperacion_dos_factores',
     ];
 
+    /** Sanción temporal vigente (solo lectura; sus publicaciones no salen en el feed). */
+    public function isSuspended(): bool
+    {
+        return $this->suspendido_hasta !== null && $this->suspendido_hasta->isFuture();
+    }
+
+    /** Cuenta eliminada por moderación (no usamos SoftDeletes para no romper historiales). */
+    public function isBanned(): bool
+    {
+        return $this->eliminado_en !== null;
+    }
+
     // Columnas de autenticación en español (Laravel asume password / remember_token).
     public function getAuthPasswordName(): string
     {
@@ -56,6 +68,8 @@ class User extends Authenticatable
     {
         return [
             'correo_verificado_en' => 'datetime',
+            'suspendido_hasta' => 'datetime',
+            'eliminado_en' => 'datetime',
             'dos_factores_confirmado_en' => 'datetime',
             'contrasena' => 'hashed',
         ];

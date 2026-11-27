@@ -101,6 +101,12 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->isBanned()) {
+            throw ValidationException::withMessages([
+                'email' => ['Esta cuenta fue eliminada por incumplir las normas de AgroLink.'],
+            ]);
+        }
+
         // Con verificación en dos pasos: solo un token pendiente (10 min) que únicamente
         // sirve para /two-factor/challenge; el token completo llega al validar el código.
         if ($user->hasTwoFactorEnabled()) {
