@@ -32,6 +32,8 @@ class ListingController extends Controller
      */
     public function index(Request $request)
     {
+        $this->listings->purgeExpiredDrafts();
+
         $query = Listing::query()
             ->with([
                 'productType', 'user.sellerProfile', 'media',
@@ -72,6 +74,8 @@ class ListingController extends Controller
     /** Mis publicaciones en cualquier estado (borrador, publicada, rechazada...), las más nuevas primero. */
     public function mine(Request $request)
     {
+        $this->listings->purgeExpiredDrafts($request->user()->id);
+
         $listings = Listing::query()
             ->with([
                 'productType', 'user.sellerProfile', 'media', 'documents',
@@ -199,6 +203,7 @@ class ListingController extends Controller
     public function uploadMedia(StoreListingMediaRequest $request, Listing $listing)
     {
         $this->authorize('update', $listing);
+        abort_if($listing->media()->count() >= 10, 422, 'Puedes subir hasta 10 fotos por publicación.');
 
         $disk = config('filesystems.default');
         $path = $request->file('foto')->store("listings/{$listing->id}", $disk);
@@ -216,7 +221,14 @@ class ListingController extends Controller
             'alto' => $dimensions[1] ?? null,
         ]);
 
-        return new ListingMediaResource($media);
+        // Una foto nueva en una publicación visible se revisa antes de mostrarse.
+        $sentToReview = false;
+        if ($listing->estatus === 'publicada') {
+            $listing->update(['estatus' => 'en_revision', 'estatus_moderacion' => 'pendiente', 'motivo_moderacion' => null]);
+            $sentToReview = true;
+        }
+
+        return (new ListingMediaResource($media))->additional(['sent_to_review' => $sentToReview]);
     }
 
     public function destroyMedia(Listing $listing, ListingMedia $media)
@@ -226,8 +238,29 @@ class ListingController extends Controller
 
         Storage::disk(config('filesystems.default'))->delete($media->ruta_almacenamiento);
         $media->delete();
+        $listing->media()->orderBy('posicion')->get()->values()
+            ->each(fn ($m, $i) => $m->posicion === $i ? null : $m->update(['posicion' => $i]));
 
         return response()->json(['message' => 'Foto eliminada.']);
+    }
+
+    /** Nuevo orden de las fotos (la primera es la portada). Recibe todos los ids de la publicación. */
+    public function reorderMedia(Request $request, Listing $listing)
+    {
+        $this->authorize('update', $listing);
+        $data = $request->validate(['ids' => ['required', 'array', 'min:1'], 'ids.*' => ['integer']]);
+
+        $current = $listing->media()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+        $wanted = collect($data['ids'])->map(fn ($id) => (int) $id);
+        abort_unless($wanted->sort()->values()->all() === $current, 422, 'La lista de fotos no coincide con la publicación.');
+
+        DB::transaction(function () use ($listing, $wanted) {
+            foreach ($wanted->values() as $i => $id) {
+                $listing->media()->whereKey($id)->update(['posicion' => $i]);
+            }
+        });
+
+        return ListingMediaResource::collection($listing->media()->orderBy('posicion')->get());
     }
 
     /** Máximo de documentos por publicación. */

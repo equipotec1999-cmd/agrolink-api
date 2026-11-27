@@ -41,6 +41,10 @@ class ListingResource extends JsonResource
             'moderation_status' => $this->estatus_moderacion,
             'published_at' => $this->publicado_en,
             'expires_at' => $this->vence_en,
+            // Un borrador se borra solo a los 7 días de creado.
+            'draft_expires_at' => $this->estatus === 'borrador'
+                ? $this->creado_en?->copy()->addDays(\App\Services\ListingService::DRAFT_DAYS)
+                : null,
             // Solo el dueño ve el motivo del rechazo/suspensión.
             // (`user('sanctum')`: en las rutas públicas el guard por defecto no resuelve el token.)
             'moderation_note' => $this->when(

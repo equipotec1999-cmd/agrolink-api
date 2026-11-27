@@ -76,6 +76,7 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/listings/{listing}/archive', [ListingController::class, 'archive']);
     Route::post('/listings/{listing}/media', [ListingController::class, 'uploadMedia']);
     Route::delete('/listings/{listing}/media/{media}', [ListingController::class, 'destroyMedia']);
+    Route::post('/listings/{listing}/media/order', [ListingController::class, 'reorderMedia']);
     Route::post('/listings/{listing}/documents', [ListingController::class, 'storeDocument'])->middleware('throttle:20,1');
     Route::delete('/listings/{listing}/documents/{document}', [ListingController::class, 'destroyDocument']);
 

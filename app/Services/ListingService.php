@@ -5,7 +5,10 @@ namespace App\Services;
 use App\Models\Listing;
 use App\Models\Property;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -256,5 +259,46 @@ class ListingService
         }
 
         throw ValidationException::withMessages(["attributes.$key" => 'Fecha no válida. Usa el formato dd/mm/aaaa.']);
+    }
+
+    /** Días que vive un borrador antes de borrarse solo. */
+    public const DRAFT_DAYS = 7;
+
+    /**
+     * Borra los borradores con más de 7 días (con sus fotos y documentos). Render gratis no corre
+     * el planificador, así que se llama también al pedir publicaciones (una vez por hora como máximo,
+     * o siempre para las de un usuario en concreto).
+     */
+    public function purgeExpiredDrafts(?int $userId = null): int
+    {
+        if ($userId === null && ! Cache::add('agrolink:purga-borradores', true, now()->addHour())) {
+            return 0;
+        }
+
+        $disk = Storage::disk(config('filesystems.default'));
+        $count = 0;
+        Listing::query()
+            ->where('estatus', 'borrador')
+            ->where('creado_en', '<', now()->subDays(self::DRAFT_DAYS))
+            ->when($userId, fn ($q) => $q->where('usuario_id', $userId))
+            ->with(['media', 'documents'])
+            ->limit(200)
+            ->get()
+            ->each(function (Listing $l) use ($disk, &$count) {
+                try {
+                    foreach ($l->media as $m) {
+                        $disk->delete($m->ruta_almacenamiento);
+                    }
+                    foreach ($l->documents as $d) {
+                        $disk->delete($d->ruta_almacenamiento);
+                    }
+                    $l->forceDelete();
+                    $count++;
+                } catch (\Throwable $e) {
+                    Log::warning('No se pudo borrar el borrador vencido', ['id' => $l->id, 'error' => $e->getMessage()]);
+                }
+            });
+
+        return $count;
     }
 }
