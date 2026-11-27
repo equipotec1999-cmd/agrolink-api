@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict QMPXB0xMmN9bghPNvdFxNB31qJI476gZy9EEIia7JKHvXoij8eOXWmwoxBFuKHu
+\restrict hAmKDATPHxDkVfA0vNvTASqRmFjC4Rhc0qshb8sDVPEmahHwif3WkTXcslTZegF
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
--- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+2)
+-- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+5)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -2635,6 +2635,13 @@ CREATE INDEX documentos_verificacion_solicitud_id_index ON public.documentos_ver
 
 
 --
+-- Name: eventos_operacion_cancelado_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX eventos_operacion_cancelado_idx ON public.eventos_operacion USING btree (actor_id) WHERE ((estatus_nuevo)::text = 'cancelado'::text);
+
+
+--
 -- Name: eventos_operacion_operacion_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2828,6 +2835,13 @@ CREATE INDEX publicaciones_revision_idx ON public.publicaciones USING btree (cre
 --
 
 CREATE INDEX publicaciones_usuario_idx ON public.publicaciones USING btree (usuario_id, id DESC);
+
+
+--
+-- Name: reportes_abiertos_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX reportes_abiertos_idx ON public.reportes USING btree (reportable_tipo, reportable_id) WHERE ((estatus)::text = ANY ((ARRAY['abierto'::character varying, 'investigating'::character varying])::text[]));
 
 
 --
@@ -3533,5 +3547,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict QMPXB0xMmN9bghPNvdFxNB31qJI476gZy9EEIia7JKHvXoij8eOXWmwoxBFuKHu
+\unrestrict hAmKDATPHxDkVfA0vNvTASqRmFjC4Rhc0qshb8sDVPEmahHwif3WkTXcslTZegF
 
