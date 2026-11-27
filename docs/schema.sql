@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict iOtW98xUYoi7z80MZpReAtgMl2BIBHly0Fldcfc86cxhhomYnqn8zXomQOaqM3a
+\restrict ybD7nmIuhO0dSUZ8GjNfzs0jfpHEFFvOGBLPyeW1fzb4rlywMdqsFrivn1NfXFX
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
--- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+2)
+-- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+5)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -3648,5 +3648,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict iOtW98xUYoi7z80MZpReAtgMl2BIBHly0Fldcfc86cxhhomYnqn8zXomQOaqM3a
+\unrestrict ybD7nmIuhO0dSUZ8GjNfzs0jfpHEFFvOGBLPyeW1fzb4rlywMdqsFrivn1NfXFX
 
