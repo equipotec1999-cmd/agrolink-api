@@ -18,17 +18,38 @@ class Operation extends Modelo
         'monto',
         'cantidad',
         'estatus',
+        'pin_entrega',
+        'pin_intentos',
+        'entregado_en',
+        'motivo_cancelacion',
+    ];
+
+    /** Nunca sale en JSON por accidente: el Resource decide quién lo ve (solo el comprador). */
+    protected $hidden = ['pin_entrega'];
+
+    public const PIN_LENGTH = 4;
+
+    public const PIN_MAX_ATTEMPTS = 5;
+
+    /** Estados en los que el vendedor puede cerrar la entrega con el PIN del comprador. */
+    public const PIN_ESTADOS = [
+        'oferta_aceptada', 'pendiente_pago', 'pagado', 'preparando_entrega', 'en_transito', 'entregado',
     ];
 
     /**
      * Ciclo de vida con pago manual (sin pasarela): estado actual => rol => estados a los que ese rol puede pasarla.
      *
      *   oferta_aceptada ─(comprador avisa que pagó)→ pendiente_pago ─(vendedor confirma)→ pagado
-     *   pagado → preparando_entrega → en_transito → entregado ─(comprador confirma)→ completado
+     *   pagado → preparando_entrega → en_transito → (entrega) → completado
      *
-     * El vendedor puede saltarse pasos de entrega (p. ej. entrega en persona: de `pagado` a `entregado`) y
-     * confirmar un pago hecho en mano desde `oferta_aceptada`. Cancelar solo antes de que el pago esté
-     * confirmado; después ya hay dinero de por medio y el caso se resuelve por reporte a moderación.
+     * La entrega se confirma de dos formas:
+     *   - El vendedor escribe el PIN que tiene el comprador (POST /operations/{id}/deliver). Prueba que se
+     *     vieron en persona; cierra la operación aunque el pago se haya hecho en mano al entregar.
+     *   - El comprador toca «Ya lo recibí» (→ completado), para envíos donde no se ven.
+     * El vendedor NO puede marcar «entregado» sin PIN.
+     *
+     * Cancelar (con motivo): el comprador antes de que el pago se confirme; el vendedor mientras no haya
+     * salido el pedido (si ya cobró, él devuelve el dinero). En camino ya no se cancela: se reporta.
      */
     public const FLUJO = [
         'oferta_aceptada' => [
@@ -39,11 +60,35 @@ class Operation extends Modelo
             'buyer' => ['cancelado'],
             'seller' => ['pagado', 'cancelado'],
         ],
-        'pagado' => ['seller' => ['preparando_entrega', 'en_transito', 'entregado']],
-        'preparando_entrega' => ['seller' => ['en_transito', 'entregado']],
-        'en_transito' => ['seller' => ['entregado']],
+        'pagado' => [
+            'buyer' => ['completado'],
+            'seller' => ['preparando_entrega', 'en_transito', 'cancelado'],
+        ],
+        'preparando_entrega' => [
+            'buyer' => ['completado'],
+            'seller' => ['en_transito', 'cancelado'],
+        ],
+        'en_transito' => ['buyer' => ['completado']],
+        // Operaciones viejas que quedaron en «entregado» antes del PIN.
         'entregado' => ['buyer' => ['completado']],
     ];
+
+    /** PIN nuevo de 4 dígitos (reinicia los intentos). */
+    public function regeneratePin(): string
+    {
+        $pin = str_pad((string) random_int(0, 9999), self::PIN_LENGTH, '0', STR_PAD_LEFT);
+        $this->forceFill(['pin_entrega' => $pin, 'pin_intentos' => 0])->save();
+
+        return $pin;
+    }
+
+    /** Asegura que la operación activa tenga PIN (las creadas antes de esta función no lo tienen). */
+    public function ensurePin(): void
+    {
+        if (! $this->pin_entrega && in_array($this->estatus, self::PIN_ESTADOS, true)) {
+            $this->regeneratePin();
+        }
+    }
 
     /** Estados a los que `$role` ('buyer'|'seller') puede mover una operación que está en `$estatus`. */
     public static function transicionesPara(string $estatus, string $role): array
@@ -66,6 +111,8 @@ class Operation extends Modelo
         return [
             'monto' => 'decimal:2',
             'cantidad' => 'decimal:2',
+            'pin_entrega' => 'encrypted',
+            'entregado_en' => 'datetime',
         ];
     }
 

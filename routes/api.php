@@ -95,6 +95,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::get('/operations', [OperationController::class, 'index']);
     Route::get('/operations/{operation}', [OperationController::class, 'show']);
     Route::post('/operations/{operation}/transition', [OperationController::class, 'transition']);
+    Route::post('/operations/{operation}/deliver', [OperationController::class, 'deliver'])->middleware('throttle:10,1');
+    Route::post('/operations/{operation}/pin', [OperationController::class, 'regeneratePin'])->middleware('throttle:6,1');
     Route::post('/operations/{operation}/review', [ReviewController::class, 'store']);
     Route::get('/sellers/{user}/reviews', [ReviewController::class, 'forSeller']);
 

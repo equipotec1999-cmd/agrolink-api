@@ -159,44 +159,98 @@ class ChatOfferTest extends ApiTestCase
         return \App\Models\Operation::firstOrFail()->id;
     }
 
-    public function test_ciclo_completo_pago_entrega_y_confirmacion(): void
+    public function test_ciclo_completo_pago_y_entrega_con_pin(): void
     {
         $seller = $this->makeUser('vendedor');
         $buyer = $this->makeUser();
         $op = $this->operation($seller, $buyer);
 
-        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'pendiente_pago'])
-            ->assertOk()->assertJsonPath('data.status', 'pendiente_pago');
-        // El comprador no puede confirmar su propio pago ni saltarse la entrega.
+        $pin = $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'pendiente_pago'])
+            ->assertOk()->assertJsonPath('data.status', 'pendiente_pago')->json('data.delivery_pin');
+        $this->assertMatchesRegularExpression('/^[0-9]{4}$/', $pin);
+        // El comprador no puede confirmar su propio pago.
         $this->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertUnprocessable();
-        $this->postJson("/api/operations/$op/transition", ['status' => 'completado'])->assertUnprocessable();
+        // El comprador no puede escribir el PIN.
+        $this->postJson("/api/operations/$op/deliver", ['pin' => $pin])->assertForbidden();
 
-        $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertOk();
+        $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])
+            ->assertOk()->assertJsonPath('data.delivery_pin', null)->assertJsonPath('data.can_deliver', true);
         $this->postJson("/api/operations/$op/transition", ['status' => 'en_transito'])->assertOk();
-        $this->postJson("/api/operations/$op/transition", ['status' => 'entregado'])->assertOk()
-            ->assertJsonPath('data.actions', []);
-        // El vendedor no puede darla por completada: la confirma quien recibe.
+        // Sin PIN el vendedor no puede marcarla entregada ni completada.
+        $this->postJson("/api/operations/$op/transition", ['status' => 'entregado'])->assertUnprocessable();
         $this->postJson("/api/operations/$op/transition", ['status' => 'completado'])->assertUnprocessable();
 
-        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'completado'])
-            ->assertOk()->assertJsonPath('data.can_review', true);
-        // Reintento idempotente: no duplica eventos ni suma otra operación al vendedor.
-        $this->postJson("/api/operations/$op/transition", ['status' => 'completado'])->assertOk();
+        $wrong = $pin === '0000' ? '1111' : '0000';
+        $this->postJson("/api/operations/$op/deliver", ['pin' => $wrong])->assertUnprocessable();
+        $this->postJson("/api/operations/$op/deliver", ['pin' => $pin])
+            ->assertOk()->assertJsonPath('data.status', 'completado')->assertJsonPath('data.can_review', true);
+        // Reintento idempotente.
+        $this->postJson("/api/operations/$op/deliver", ['pin' => $pin])->assertOk();
 
         $this->assertSame(1, \App\Models\SellerProfile::find($seller->id)->operaciones_completadas);
+        // creada, pendiente_pago, pagado, en_transito, entregado, completado
         $this->assertSame(6, \App\Models\OperationEvent::where('operacion_id', $op)->count());
     }
 
-    public function test_un_extrano_no_puede_mover_la_operacion_y_se_puede_cancelar_antes_del_pago(): void
+    public function test_el_comprador_confirma_que_recibio_sin_pin(): void
     {
         $seller = $this->makeUser('vendedor');
         $buyer = $this->makeUser();
         $op = $this->operation($seller, $buyer);
 
-        $this->as($this->makeUser())->postJson("/api/operations/$op/transition", ['status' => 'cancelado'])->assertNotFound();
-        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'cancelado'])
-            ->assertOk()->assertJsonPath('data.status', 'cancelado');
+        $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertOk();
+        $this->postJson("/api/operations/$op/transition", ['status' => 'en_transito'])->assertOk();
+        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'completado'])
+            ->assertOk()->assertJsonPath('data.status', 'completado');
+    }
+
+    public function test_pin_se_bloquea_tras_cinco_fallos_y_el_comprador_genera_otro(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $op = $this->operation($seller, $buyer);
+        $pin = \App\Models\Operation::find($op)->pin_entrega;
+        $wrong = $pin === '0000' ? '1111' : '0000';
+
+        $this->as($seller);
+        for ($i = 0; $i < 4; $i++) {
+            $this->postJson("/api/operations/$op/deliver", ['pin' => $wrong])->assertUnprocessable();
+        }
+        $this->postJson("/api/operations/$op/deliver", ['pin' => $wrong])->assertStatus(423);
+        $this->postJson("/api/operations/$op/deliver", ['pin' => $pin])->assertStatus(423);
+
+        $new = $this->as($buyer)->postJson("/api/operations/$op/pin")->assertOk()
+            ->assertJsonPath('data.pin_locked', false)->json('data.delivery_pin');
+        $this->as($seller)->postJson("/api/operations/$op/deliver", ['pin' => $new])
+            ->assertOk()->assertJsonPath('data.status', 'completado');
+    }
+
+    public function test_cancelar_exige_motivo_y_respeta_el_momento(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $op = $this->operation($seller, $buyer);
+
+        $this->as($this->makeUser())->postJson("/api/operations/$op/transition", ['status' => 'cancelado', 'reason' => 'x x x'])->assertNotFound();
+        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'cancelado'])->assertUnprocessable();
+        $this->postJson("/api/operations/$op/transition", ['status' => 'cancelado', 'reason' => 'Ya no lo necesito'])
+            ->assertOk()->assertJsonPath('data.status', 'cancelado')
+            ->assertJsonPath('data.cancel_reason', 'Ya no lo necesito');
         $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertUnprocessable();
+    }
+
+    public function test_tras_el_pago_solo_el_vendedor_cancela_y_en_camino_nadie(): void
+    {
+        $seller = $this->makeUser('vendedor');
+        $buyer = $this->makeUser();
+        $op = $this->operation($seller, $buyer);
+        $this->as($seller)->postJson("/api/operations/$op/transition", ['status' => 'pagado'])->assertOk();
+
+        $this->as($buyer)->postJson("/api/operations/$op/transition", ['status' => 'cancelado', 'reason' => 'Me arrepentí'])->assertUnprocessable();
+        $this->as($seller)->getJson("/api/operations/$op")->assertJsonPath('data.can_cancel', true);
+        $this->postJson("/api/operations/$op/transition", ['status' => 'en_transito'])->assertOk()
+            ->assertJsonPath('data.can_cancel', false);
+        $this->postJson("/api/operations/$op/transition", ['status' => 'cancelado', 'reason' => 'Sin producto'])->assertUnprocessable();
     }
 
     public function test_calificar_solo_una_vez_y_solo_si_esta_completada(): void

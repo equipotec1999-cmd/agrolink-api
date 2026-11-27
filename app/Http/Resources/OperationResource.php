@@ -30,6 +30,15 @@ class OperationResource extends JsonResource
             // Estados a los que YO puedo pasarla ahora (la app arma los botones con esto, sin copiar las reglas).
             'actions' => Operation::transicionesPara($this->estatus, $role),
             // Una vez completada, cada parte puede calificar a la otra una sola vez.
+            // Entrega con PIN (estilo DiDi): el comprador lo ve; el vendedor lo escribe para cerrar.
+            'delivery_pin' => $isBuyer && in_array($this->estatus, Operation::PIN_ESTADOS, true)
+                ? $this->pin_entrega
+                : null,
+            'can_deliver' => ! $isBuyer && in_array($this->estatus, Operation::PIN_ESTADOS, true),
+            'pin_locked' => (int) $this->pin_intentos >= Operation::PIN_MAX_ATTEMPTS,
+            'can_cancel' => in_array('cancelado', Operation::transicionesPara($this->estatus, $role), true),
+            'cancel_reason' => $this->motivo_cancelacion,
+            'delivered_at' => $this->entregado_en,
             'can_review' => $this->estatus === 'completado' && ! $reviewed,
             'reviewed' => $reviewed,
             'listing' => [

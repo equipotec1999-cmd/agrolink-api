@@ -123,10 +123,11 @@ class NotificationService
     }
 
     /** La operación cambió de estado (pago, entrega, cancelación...): avisa a la otra persona. */
-    public static function operationUpdated(Operation $op, User $actor, string $status): void
+    public static function operationUpdated(Operation $op, User $actor, string $status, ?string $reason = null): void
     {
         self::put(self::otherInOperation($op, $actor), 'operation_updated', self::operationBase($op, $actor) + [
             'status' => $status,
+            'reason' => $reason,
         ]);
     }
 

@@ -117,6 +117,8 @@ class OfferController extends Controller
                 'monto' => round((float) $locked->monto * (float) $locked->cantidad, 2),
                 'cantidad' => $locked->cantidad,
                 'estatus' => 'oferta_aceptada',
+                // PIN de entrega: lo ve el comprador y el vendedor lo escribe al entregar.
+                'pin_entrega' => str_pad((string) random_int(0, 9999), Operation::PIN_LENGTH, '0', STR_PAD_LEFT),
             ]);
 
             $operation->events()->create([

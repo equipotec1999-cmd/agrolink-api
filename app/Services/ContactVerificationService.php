@@ -49,6 +49,7 @@ class ContactVerificationService
     {
         $row = DB::table('codigos_verificacion_contacto')
             ->where('destino', $destination)
+            ->where('canal', '!=', 'password_reset')
             ->orderByDesc('id')
             ->first();
 
@@ -85,11 +86,45 @@ class ContactVerificationService
     {
         $text = $body ?? "Tu código de confirmación de AgroLink es: {$code}\n\nVence en 15 minutos. Si no lo pediste, ignora este mensaje.";
 
-        // Preferido: API de Resend (más confiable que SMTP desde Render).
-        $key = config('services.resend.key');
-        if ($key) {
+        if (! $this->deliver($to, $subject, $text)) {
+            // Sin proveedor que funcione (modo desarrollo o mal configurado): deja el código en los logs
+            // para poder probar desde Render → Logs.
+            Log::warning("Correo NO enviado. Código para {$to}: {$code}");
+        }
+    }
+
+    /**
+     * Manda un correo por el primer proveedor que funcione: Brevo → Resend → MAIL_* (SMTP/log).
+     * Devuelve true solo si un proveedor real lo aceptó. Público para el comando agrolink:probar-correo.
+     */
+    public function deliver(string $to, string $subject, string $text): bool
+    {
+        $brevo = config('services.brevo.key');
+        if ($brevo && config('services.brevo.from_email')) {
             try {
-                Http::withToken($key)
+                Http::withHeaders(['api-key' => $brevo, 'accept' => 'application/json'])
+                    ->timeout(10)
+                    ->post('https://api.brevo.com/v3/smtp/email', [
+                        'sender' => [
+                            'email' => config('services.brevo.from_email'),
+                            'name' => config('services.brevo.from_name'),
+                        ],
+                        'to' => [['email' => $to]],
+                        'subject' => $subject,
+                        'textContent' => $text,
+                    ])
+                    ->throw();
+
+                return true;
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo enviar correo por Brevo', ['error' => $e->getMessage()]);
+            }
+        }
+
+        $resend = config('services.resend.key');
+        if ($resend) {
+            try {
+                Http::withToken($resend)
                     ->timeout(10)
                     ->post('https://api.resend.com/emails', [
                         'from' => config('services.resend.from'),
@@ -99,22 +134,23 @@ class ContactVerificationService
                     ])
                     ->throw();
 
-                return;
+                return true;
             } catch (\Throwable $e) {
                 Log::warning('No se pudo enviar correo por Resend', ['error' => $e->getMessage()]);
             }
         }
 
-        // Respaldo: el mailer configurado en MAIL_* (por defecto "log").
-        try {
-            Mail::raw($text, fn ($msg) => $msg->to($to)->subject($subject));
-        } catch (\Throwable $e) {
-            Log::warning('No se pudo enviar correo de verificación', ['error' => $e->getMessage()]);
+        if (! in_array(config('mail.default'), ['log', 'array'], true)) {
+            try {
+                Mail::raw($text, fn ($msg) => $msg->to($to)->subject($subject));
+
+                return true;
+            } catch (\Throwable $e) {
+                Log::warning('No se pudo enviar correo por MAIL_*', ['error' => $e->getMessage()]);
+            }
         }
-        // Sin proveedor real (modo desarrollo): deja el código en los logs.
-        if (! $key) {
-            Log::info("Código de verificación (email) para {$to}: {$code}");
-        }
+
+        return false;
     }
 
     /** Envía un código de 6 dígitos para resetear la contraseña. Reemplaza cualquier código previo. */

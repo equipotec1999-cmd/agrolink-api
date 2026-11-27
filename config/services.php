@@ -32,6 +32,16 @@ return [
 
     'resend' => [
         'key' => env('RESEND_KEY'),
+        // Sin dominio verificado Resend solo acepta este remitente y solo envía al dueño de la cuenta.
+        'from' => env('RESEND_FROM', 'AgroLink <onboarding@resend.dev>'),
+    ],
+
+    // Brevo (gratis, 300 correos/día): basta verificar UN correo remitente (p. ej. un Gmail) y envía
+    // a cualquier destinatario. Va por API HTTPS porque Render gratis bloquea los puertos SMTP.
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+        'from_email' => env('BREVO_FROM_EMAIL', env('MAIL_FROM_ADDRESS')),
+        'from_name' => env('BREVO_FROM_NAME', 'AgroLink'),
     ],
 
     'slack' => [
