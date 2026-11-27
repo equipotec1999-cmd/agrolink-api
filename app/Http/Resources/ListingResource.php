@@ -75,13 +75,8 @@ class ListingResource extends JsonResource
             ]),
             'attributes' => $this->atributos_cache,
             'media' => ListingMediaResource::collection($this->whenLoaded('media')),
-            'documents' => $this->whenLoaded('documents', function () use ($request) {
-                // El archivo solo lo abren el dueño y moderación (enlace firmado de 30 min).
-                $u = $request->user('sanctum');
-                $canOpen = $u && ($u->id === $this->usuario_id || $u->can('moderate listings') || $u->can('moderate documents'));
-
-                return $this->documents->map(fn ($d) => self::documentArray($d, (bool) $canOpen))->values();
-            }),
+            // Cualquiera puede abrir los documentos para corroborar (enlace firmado de 30 min).
+            'documents' => $this->whenLoaded('documents', fn () => $this->documents->map(fn ($d) => self::documentArray($d, true))->values()),
             'created_at' => $this->creado_en,
         ];
     }

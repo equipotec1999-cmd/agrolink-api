@@ -30,11 +30,14 @@ class VerificationController extends Controller
 
         return response()->json(['data' => [
             'is_verified' => (bool) $user->sellerProfile?->verificado,
+            // La app muestra «¡Felicidades!» una vez y luego llama a /verification/congrats-seen.
+            'congrats_pending' => $last && $last->estatus === 'aprobada' && $last->felicitacion_vista_en === null,
             'request' => $last ? [
                 'id' => $last->id,
                 'status' => $last->estatus,
                 'business_name' => $last->nombre_negocio,
                 'rejection_reason' => $last->estatus === 'rechazada' ? $last->motivo_rechazo : null,
+                'reviewed_at' => $last->revisado_en,
                 'created_at' => $last->creado_en,
             ] : null,
         ]]);
@@ -112,5 +115,16 @@ class VerificationController extends Controller
         foreach ($paths as $p) {
             Storage::disk($disk)->delete($p);
         }
+    }
+
+    /** Ya se mostró el aviso de felicitación. */
+    public function congratsSeen(Request $request)
+    {
+        VerificationRequest::where('usuario_id', $request->user()->id)
+            ->where('estatus', 'aprobada')
+            ->whereNull('felicitacion_vista_en')
+            ->update(['felicitacion_vista_en' => now()]);
+
+        return response()->noContent();
     }
 }

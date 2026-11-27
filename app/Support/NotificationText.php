@@ -81,8 +81,8 @@ class NotificationText
             'dispute_opened' => ['Disputa abierta', "$actor abrió una disputa por «{$title}»: ".($d['reason'] ?? 'problema con la operación').'. Da tu versión para que moderación decida.'],
             'dispute_replied' => ['Respuesta en la disputa', "$actor dio su versión en la disputa de «{$title}». Moderación ya puede decidir."],
             'dispute_resolved' => ['Disputa resuelta', self::disputeOutcome($d)],
-            'verification_approved' => ['Vendedor verificado', 'Revisamos tu documentación: ya eres vendedor verificado.'],
-            'verification_rejected' => ['Verificación rechazada', 'No pudimos verificar tu cuenta. Motivo: '.($d['reason'] ?? 'sin especificar')],
+            'verification_approved' => ['¡Felicidades, ya estás verificado!', 'Revisamos tu documentación: ya eres un usuario verificado y tus publicaciones muestran la insignia.'],
+            'verification_rejected' => ['Verificación rechazada', 'No pudimos verificar tu cuenta. Motivo: '.($d['reason'] ?? 'sin especificar').'. Corrige y vuelve a enviarla.'],
             default => ['Notificación', ''],
         };
     }

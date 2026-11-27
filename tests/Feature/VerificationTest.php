@@ -132,4 +132,22 @@ class VerificationTest extends ApiTestCase
         $this->submit($user)->assertCreated();
         $this->assertDatabaseCount('solicitudes_verificacion', 2);
     }
+
+    public function test_al_aprobar_la_app_muestra_felicidades_una_sola_vez(): void
+    {
+        $user = $this->makeUser();
+        $this->submit($user)->assertCreated();
+        $req = VerificationRequest::firstOrFail();
+
+        $this->getJson('/api/verification')->assertJsonPath('data.congrats_pending', false);
+
+        $this->as($this->makeUser('moderador', twoFactor: true))
+            ->postJson("/api/moderation/verifications/{$req->id}/approve")->assertNoContent();
+
+        $this->as($user)->getJson('/api/verification')->assertJsonPath('data.congrats_pending', true);
+        $this->getJson('/api/notifications')->assertOk()->assertJsonFragment(['type' => 'verification_approved']);
+
+        $this->postJson('/api/verification/congrats-seen')->assertNoContent();
+        $this->getJson('/api/verification')->assertJsonPath('data.congrats_pending', false);
+    }
 }

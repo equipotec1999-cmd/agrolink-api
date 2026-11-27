@@ -83,8 +83,14 @@ class ListingReviewDocumentsTest extends ApiTestCase
         // Sin firma no se abre.
         $this->get("/api/listing-documents/{$doc['id']}/file")->assertForbidden();
 
-        // El dueño lo ve en su publicación con enlace; otra persona sin enlace.
         $this->getJson("/api/listings/{$listing->id}")->assertJsonPath('data.documents.0.name', 'guia-transito.pdf');
+
+        // Un comprador también recibe el enlace para corroborarlo (ya publicada).
+        $listing->update(['estatus' => 'publicada']);
+        $this->as($this->makeUser())->getJson("/api/listings/{$listing->id}")
+            ->assertJsonPath('data.documents.0.name', 'guia-transito.pdf')
+            ->assertJsonPath('data.documents.0.url', fn ($u) => is_string($u) && str_contains($u, 'signature='));
+        $this->as($owner);
 
         $this->deleteJson("/api/listings/{$listing->id}/documents/{$doc['id']}")->assertOk();
         $this->assertDatabaseMissing('documentos_publicacion', ['id' => $doc['id']]);

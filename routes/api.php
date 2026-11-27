@@ -134,6 +134,7 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     // Verificación de vendedor (quien la pide).
     Route::get('/verification', [VerificationController::class, 'show']);
     Route::post('/verification', [VerificationController::class, 'store'])->middleware('throttle:5,60');
+    Route::post('/verification/congrats-seen', [VerificationController::class, 'congratsSeen']);
 
     // Solo con permiso (no por nombre de rol).
     Route::prefix('moderation')->middleware('two-factor')->group(function () {
