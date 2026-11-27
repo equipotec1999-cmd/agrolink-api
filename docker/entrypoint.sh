@@ -7,6 +7,10 @@ cd /var/www/html
 : "${DB_HOST:?Falta DB_HOST}"
 
 php artisan config:cache
+# Rutas y eventos precompilados: menos trabajo en cada petición. Si algo no se puede
+# cachear, se sigue sin caché (no detiene el arranque).
+php artisan route:cache || php artisan route:clear
+php artisan event:cache || true
 
 # Migra y siembra roles + catálogo (ambos idempotentes). NO corre DatabaseSeeder:
 # ese crea un usuario de prueba que no debe existir en producción.

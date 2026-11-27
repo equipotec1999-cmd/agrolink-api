@@ -18,6 +18,13 @@ return [
     'default' => env('CACHE_STORE', 'database'),
 
     /*
+    | Contador del límite de peticiones (throttle). Se toca en CADA petición: en la base de
+    | datos remota eran varias consultas de ida y vuelta a Supabase por request. En archivo
+    | local es instantáneo; si el contenedor se reinicia solo se reinician los contadores.
+    */
+    'limiter' => env('CACHE_LIMITER', 'file'),
+
+    /*
     |--------------------------------------------------------------------------
     | Cache Stores
     |--------------------------------------------------------------------------
