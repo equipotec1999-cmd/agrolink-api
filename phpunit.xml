@@ -22,6 +22,8 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
+        <!-- En producción el limitador cuenta en archivo; en pruebas debe reiniciarse en cada una. -->
+        <env name="CACHE_LIMITER" value="array" force="true"/>
         <!-- Las pruebas usan SIEMPRE una base propia (RefreshDatabase la borra y recrea):
              nunca la de desarrollo ni la de producción. TestCase se niega a correr si el
              nombre no termina en _test. Host/usuario/clave se pueden cambiar por variables de entorno. -->
