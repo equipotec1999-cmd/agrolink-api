@@ -14,6 +14,9 @@ class Message extends Modelo
         'remitente_id',
         'oferta_id',
         'cuerpo',
+        'ubicacion_lat',
+        'ubicacion_lng',
+        'ubicacion_etiqueta',
         'leido_en',
     ];
 
@@ -21,6 +24,8 @@ class Message extends Modelo
     {
         return [
             'leido_en' => 'datetime',
+            'ubicacion_lat' => 'float',
+            'ubicacion_lng' => 'float',
         ];
     }
 

@@ -17,6 +17,13 @@ class MessageResource extends JsonResource
             // Un mensaje es texto (`body`) o una oferta (`offer`).
             'offer_id' => $this->oferta_id,
             'offer' => $this->whenLoaded('offer', fn () => $this->offer ? new OfferResource($this->offer) : null),
+            // Ubicación compartida (solo llega a los dos participantes del chat).
+            'location' => $this->ubicacion_lat !== null ? [
+                'lat' => (float) $this->ubicacion_lat,
+                'lng' => (float) $this->ubicacion_lng,
+                'label' => $this->ubicacion_etiqueta,
+                'maps_url' => 'https://www.google.com/maps/search/?api=1&query='.$this->ubicacion_lat.','.$this->ubicacion_lng,
+            ] : null,
             'read_at' => $this->leido_en,
             'created_at' => $this->creado_en,
         ];

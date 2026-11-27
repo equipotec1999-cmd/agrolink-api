@@ -25,6 +25,10 @@ class AuthController extends Controller
                 'telefono' => $request->input('phone'),
                 'contrasena' => $request->string('password'),
             ]);
+            $user->forceFill([
+                'terminos_version' => config('legal.version'),
+                'terminos_aceptados_en' => now(),
+            ])->save();
 
             Profile::create(['usuario_id' => $user->id]);
 

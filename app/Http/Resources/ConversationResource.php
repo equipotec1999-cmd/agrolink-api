@@ -36,6 +36,7 @@ class ConversationResource extends JsonResource
             'last_message' => $last ? [
                 'body' => $last->cuerpo,
                 'has_offer' => $last->oferta_id !== null,
+                'has_location' => $last->ubicacion_lat !== null,
                 'sender_id' => $last->remitente_id,
                 'created_at' => $last->creado_en,
             ] : null,

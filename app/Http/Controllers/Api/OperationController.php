@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OperationResource;
 use App\Models\Operation;
-use App\Models\SellerProfile;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +20,7 @@ class OperationController extends Controller
                 'listing.media',
                 'buyer:id,nombre',
                 'seller:id,nombre',
+                'dispute',
             ])
             // `reviewed`: si YO ya califiqué esta operación (decide si la app ofrece calificar).
             ->withExists(['reviews as reviewed' => fn ($q) => $q->where('autor_id', $me)]);
@@ -85,6 +85,7 @@ class OperationController extends Controller
             if ($locked->estatus === $new) {
                 return false;
             }
+            abort_if($locked->hasOpenDispute(), 409, 'Hay una disputa abierta: moderación decidirá cómo sigue esta operación.');
 
             abort_unless(
                 in_array($new, Operation::transicionesPara($locked->estatus, $role), true),
@@ -98,7 +99,7 @@ class OperationController extends Controller
             if ($new === 'completado' && ! $note) {
                 $note = 'El comprador confirmó que recibió el pedido.';
             }
-            $this->move($locked, $me->id, $new, $note);
+            $locked->moveTo($me->id, $new, $note);
 
             return $locked;
         });
@@ -132,6 +133,7 @@ class OperationController extends Controller
             }
             abort_unless(in_array($locked->estatus, Operation::PIN_ESTADOS, true), 422,
                 'Esta operación ya no admite entrega.');
+            abort_if($locked->hasOpenDispute(), 409, 'Hay una disputa abierta: moderación decidirá cómo sigue esta operación.');
             $locked->ensurePin();
             abort_if($locked->pin_intentos >= Operation::PIN_MAX_ATTEMPTS, 423,
                 'Demasiados intentos. Pide al comprador que genere un PIN nuevo.');
@@ -144,9 +146,9 @@ class OperationController extends Controller
             }
 
             if ($locked->estatus !== 'entregado') {
-                $this->move($locked, $me->id, 'entregado', 'Entrega confirmada con el PIN del comprador.');
+                $locked->moveTo($me->id, 'entregado', 'Entrega confirmada con el PIN del comprador.');
             }
-            $this->move($locked, $me->id, 'completado', null);
+            $locked->moveTo($me->id, 'completado', null);
 
             return $locked;
         });
@@ -176,34 +178,6 @@ class OperationController extends Controller
         $operation->regeneratePin();
 
         return $this->fresh($me->id, $operation->id);
-    }
-
-    /** Cambia el estatus, deja el evento y aplica los efectos (contador del vendedor, motivo). */
-    private function move(Operation $op, int $actorId, string $new, ?string $note): void
-    {
-        $before = $op->estatus;
-        $attrs = ['estatus' => $new];
-        if ($new === 'entregado') {
-            $attrs['entregado_en'] = now();
-        }
-        if ($new === 'completado' && ! $op->entregado_en) {
-            $attrs['entregado_en'] = now();
-        }
-        if ($new === 'cancelado') {
-            $attrs['motivo_cancelacion'] = $note;
-        }
-        $op->update($attrs);
-        $op->events()->create([
-            'estatus_anterior' => $before,
-            'estatus_nuevo' => $new,
-            'actor_id' => $actorId,
-            'nota' => $note,
-        ]);
-
-        if ($new === 'completado') {
-            $perfil = SellerProfile::firstOrCreate(['usuario_id' => $op->vendedor_id]);
-            $perfil->increment('operaciones_completadas');
-        }
     }
 
     private function fresh(int $me, int $id): OperationResource

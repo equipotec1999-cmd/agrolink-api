@@ -18,6 +18,7 @@ class ContactVerificationTest extends ApiTestCase
             'email' => 'ana@ejemplo.com',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'accept_terms' => true,
         ])->assertCreated()
           ->assertJsonMissing(['token'])
           ->assertJsonPath('verification.channel', 'email')
@@ -36,6 +37,7 @@ class ContactVerificationTest extends ApiTestCase
             'phone' => '+52 999 123 4567',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'accept_terms' => true,
         ])->assertStatus(422)->assertJsonValidationErrors('email');
     }
 
@@ -46,6 +48,7 @@ class ContactVerificationTest extends ApiTestCase
             'email' => 'ana@ejemplo.com',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'accept_terms' => true,
         ])->assertCreated();
 
         // El código real está hasheado; forzamos uno conocido para la prueba.
@@ -73,6 +76,7 @@ class ContactVerificationTest extends ApiTestCase
             'email' => 'ana@ejemplo.com',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'accept_terms' => true,
         ])->assertCreated();
 
         $this->postJson('/api/verify-contact', [
@@ -90,6 +94,7 @@ class ContactVerificationTest extends ApiTestCase
             'email' => 'ana@ejemplo.com',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'accept_terms' => true,
         ])->assertCreated()
           ->assertJsonStructure(['user', 'token'])
           ->assertJsonMissing(['verification']);

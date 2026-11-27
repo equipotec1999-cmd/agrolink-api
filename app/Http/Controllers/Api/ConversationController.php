@@ -143,4 +143,47 @@ class ConversationController extends Controller
 
         return (new MessageResource($message))->response()->setStatusCode(201);
     }
+
+    /**
+     * Comparte una ubicación real (la del teléfono o un punto elegido) para
+     * acordar dónde entregar. El texto queda en `cuerpo` para que las
+     * versiones viejas de la app y las notificaciones lo muestren igual.
+     */
+    public function sendLocation(Request $request, Conversation $conversation)
+    {
+        $conversation = $this->mine($request, $conversation);
+
+        $data = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+            'label' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $lat = round((float) $data['lat'], 6);
+        $lng = round((float) $data['lng'], 6);
+        $label = isset($data['label']) ? trim($data['label']) : null;
+        $label = $label === '' ? null : $label;
+
+        $body = 'Ubicación compartida'.($label ? ': '.$label : '')
+            ."\nhttps://www.google.com/maps/search/?api=1&query={$lat},{$lng}";
+
+        $message = DB::transaction(function () use ($request, $conversation, $lat, $lng, $label, $body) {
+            $message = Message::create([
+                'conversacion_id' => $conversation->id,
+                'remitente_id' => $request->user()->id,
+                'cuerpo' => $body,
+                'ubicacion_lat' => $lat,
+                'ubicacion_lng' => $lng,
+                'ubicacion_etiqueta' => $label,
+            ]);
+
+            $conversation->update(['ultimo_mensaje_en' => $message->creado_en]);
+
+            return $message;
+        });
+
+        NotificationService::messageSent($conversation, $request->user(), 'Te compartió una ubicación'.($label ? ': '.$label : ''));
+
+        return (new MessageResource($message))->response()->setStatusCode(201);
+    }
 }

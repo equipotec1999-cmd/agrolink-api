@@ -26,6 +26,8 @@ class RegisterRequest extends FormRequest
             // El teléfono es solo dato de contacto (opcional, no se verifica).
             'phone' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9 ()-]{8,20}$/', 'unique:usuarios,telefono'],
             'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            // Aceptar el aviso de privacidad y los términos (y declarar ser mayor de edad).
+            'accept_terms' => ['accepted'],
         ];
     }
 
@@ -33,6 +35,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'phone.regex' => 'Teléfono inválido.',
+            'accept_terms.accepted' => 'Para crear tu cuenta debes aceptar el aviso de privacidad y los términos.',
         ];
     }
 }

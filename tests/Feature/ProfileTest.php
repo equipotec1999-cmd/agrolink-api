@@ -17,6 +17,7 @@ class ProfileTest extends ApiTestCase
             'email' => 'juan@ejemplo.com',
             'password' => 'ClaveSegura123',
             'password_confirmation' => 'ClaveSegura123',
+            'accept_terms' => true,
             'device_name' => 'test',
         ])->assertCreated()
           ->assertJsonPath('user.lastname', 'Pérez López')

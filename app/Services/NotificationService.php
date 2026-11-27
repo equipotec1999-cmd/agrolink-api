@@ -172,4 +172,34 @@ class NotificationService
             'listing_title' => $listingTitle,
         ]);
     }
+
+    /** Se abrió una disputa: avisa a la otra parte para que dé su versión. */
+    public static function disputeOpened(Operation $op, User $actor, string $reasonLabel): void
+    {
+        self::put(self::otherInOperation($op, $actor), 'dispute_opened', self::operationBase($op, $actor) + [
+            'reason' => $reasonLabel,
+        ]);
+    }
+
+    /** La otra parte respondió la disputa. */
+    public static function disputeReplied(Operation $op, User $actor): void
+    {
+        self::put(self::otherInOperation($op, $actor), 'dispute_replied', self::operationBase($op, $actor));
+    }
+
+    /** Moderación decidió: les llega a las dos partes con la nota. */
+    public static function disputeResolved(Operation $op, string $decision, string $note): void
+    {
+        $op->loadMissing('listing:id,titulo', 'offer:id,conversacion_id');
+        foreach ([$op->comprador_id => 'buyer', $op->vendedor_id => 'seller'] as $userId => $role) {
+            self::put($userId, 'dispute_resolved', [
+                'operation_id' => $op->id,
+                'conversation_id' => (string) $op->offer->conversacion_id,
+                'listing_title' => $op->listing->titulo,
+                'decision' => $decision,
+                'role' => $role,
+                'reason' => $note,
+            ]);
+        }
+    }
 }

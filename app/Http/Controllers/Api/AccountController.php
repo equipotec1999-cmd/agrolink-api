@@ -5,7 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\Listing;
+use App\Models\DeviceToken;
+use App\Models\Dispute;
 use App\Models\Operation;
+use App\Models\SavedSearch;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -118,6 +124,68 @@ class AccountController extends Controller
         $user->tokens()->where('id', '!=', $user->currentAccessToken()->id)->delete();
 
         return response()->json(['message' => 'Contraseña actualizada.']);
+    }
+
+    /**
+     * Eliminar mi cuenta (derecho de cancelación). Pide la contraseña. No se puede con
+     * operaciones o disputas abiertas, para no dejar a la otra persona colgada.
+     * Se borran o anonimizan los datos de contacto y la foto; las publicaciones se ocultan;
+     * el historial de operaciones, reseñas y reportes se conserva sin datos de contacto.
+     */
+    public function destroy(Request $request)
+    {
+        $data = $request->validate(['password' => ['required', 'string']]);
+        $user = $request->user();
+        if (! Hash::check($data['password'], $user->contrasena)) {
+            throw ValidationException::withMessages(['password' => ['La contraseña no es correcta.']]);
+        }
+
+        $open = Operation::query()
+            ->where(fn ($q) => $q->where('comprador_id', $user->id)->orWhere('vendedor_id', $user->id))
+            ->whereNotIn('estatus', ['completado', 'cancelado'])
+            ->count();
+        abort_if($open > 0, 422, "Tienes {$open} operación(es) sin terminar. Complétalas o cancélalas antes de eliminar tu cuenta.");
+
+        $disputes = Dispute::query()
+            ->where('estatus', 'abierta')
+            ->whereHas('operation', fn ($q) => $q->where('comprador_id', $user->id)->orWhere('vendedor_id', $user->id))
+            ->exists();
+        abort_if($disputes, 422, 'Tienes una disputa abierta. Espera a que moderación la resuelva.');
+
+        $avatar = $user->profile?->ruta_avatar;
+
+        DB::transaction(function () use ($user) {
+            Listing::where('usuario_id', $user->id)
+                ->whereIn('estatus', ['publicada', 'en_revision', 'borrador'])
+                ->update(['estatus' => 'suspended', 'motivo_moderacion' => 'Cuenta eliminada por su dueño.']);
+
+            $user->profile?->update(['ruta_avatar' => null, 'biografia' => null]);
+            DeviceToken::where('usuario_id', $user->id)->delete();
+            SavedSearch::where('usuario_id', $user->id)->delete();
+
+            $user->forceFill([
+                'nombre' => 'Usuario eliminado',
+                'apellidos' => null,
+                // Libera el correo y el teléfono por si quiere volver a registrarse.
+                'correo' => "eliminado+{$user->id}@agrolink.invalid",
+                'telefono' => null,
+                'contrasena' => Str::random(48),
+                'eliminado_en' => now(),
+                'motivo_eliminacion' => 'Eliminada por su dueño.',
+            ])->save();
+
+            $user->tokens()->delete();
+        });
+
+        if ($avatar) {
+            try {
+                Storage::disk(config('filesystems.default'))->delete($avatar);
+            } catch (\Throwable) {
+                // El archivo ya no está ligado a la cuenta; si falla el borrado no se bloquea la baja.
+            }
+        }
+
+        return response()->json(['message' => 'Tu cuenta fue eliminada.']);
     }
 
     /** Cifras reales del perfil: publicaciones activas, ventas, compras y reputación. */

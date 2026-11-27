@@ -16,6 +16,7 @@ class AuthTest extends ApiTestCase
             'email' => 'ana@example.com',
             'password' => 'Secreta123',
             'password_confirmation' => 'Secreta123',
+            'accept_terms' => true,
         ]);
     }
 

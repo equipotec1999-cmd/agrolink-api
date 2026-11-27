@@ -41,7 +41,8 @@ class EnsureFullSession
     {
         return $request->is(
             'api/logout', 'api/devices', 'api/devices/unregister', 'api/notifications/*',
-            'api/me/password', 'api/operations/*/transition', 'api/operations/*/deliver', 'api/operations/*/pin',
+            'api/me/password', 'api/me/accept-terms', 'api/me/delete', 'api/operations/*/transition', 'api/operations/*/deliver', 'api/operations/*/pin',
+            'api/operations/*/dispute', 'api/operations/*/dispute/reply',
         );
     }
 }

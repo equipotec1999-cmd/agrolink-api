@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Operation extends Modelo
 {
@@ -90,6 +91,39 @@ class Operation extends Modelo
         }
     }
 
+    /**
+     * Cambia el estatus, deja el evento en la línea de tiempo y aplica los efectos
+     * (contador de operaciones completadas del vendedor, motivo de cancelación).
+     * Llamar dentro de una transacción con la fila bloqueada.
+     */
+    public function moveTo(int $actorId, string $new, ?string $note): void
+    {
+        $before = $this->estatus;
+        $attrs = ['estatus' => $new];
+        if ($new === 'entregado' || ($new === 'completado' && ! $this->entregado_en)) {
+            $attrs['entregado_en'] = now();
+        }
+        if ($new === 'cancelado') {
+            $attrs['motivo_cancelacion'] = $note;
+        }
+        $this->update($attrs);
+        $this->events()->create([
+            'estatus_anterior' => $before,
+            'estatus_nuevo' => $new,
+            'actor_id' => $actorId,
+            'nota' => $note,
+        ]);
+
+        if ($new === 'completado') {
+            SellerProfile::firstOrCreate(['usuario_id' => $this->vendedor_id])->increment('operaciones_completadas');
+        } elseif ($before === 'completado') {
+            // Moderación revirtió una operación ya completada (disputa a favor del comprador).
+            SellerProfile::where('usuario_id', $this->vendedor_id)
+                ->where('operaciones_completadas', '>', 0)
+                ->decrement('operaciones_completadas');
+        }
+    }
+
     /** Estados a los que `$role` ('buyer'|'seller') puede mover una operación que está en `$estatus`. */
     public static function transicionesPara(string $estatus, string $role): array
     {
@@ -139,6 +173,17 @@ class Operation extends Modelo
     public function events(): HasMany
     {
         return $this->hasMany(OperationEvent::class, 'operacion_id')->orderBy('creado_en');
+    }
+
+    public function dispute(): HasOne
+    {
+        return $this->hasOne(Dispute::class, 'operacion_id');
+    }
+
+    /** Hay una disputa abierta: la operación no avanza hasta que moderación decida. */
+    public function hasOpenDispute(): bool
+    {
+        return Dispute::where('operacion_id', $this->id)->where('estatus', 'abierta')->exists();
     }
 
     public function reviews(): HasMany

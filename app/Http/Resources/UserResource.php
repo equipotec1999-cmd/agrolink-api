@@ -44,6 +44,10 @@ class UserResource extends JsonResource
             'seller_verified' => (bool) $this->sellerProfile?->verificado,
             'can_review_documents' => $this->can('moderate documents'),
             'can_moderate' => $this->can('moderate listings') || $this->can('resolve reports'),
+            // Aviso de privacidad / términos: la app pide aceptarlos si la versión cambió.
+            'terms_version' => $this->terminos_version,
+            'terms_current_version' => config('legal.version'),
+            'must_accept_terms' => $this->terminos_version !== config('legal.version'),
             'created_at' => $this->creado_en,
         ];
     }

@@ -35,6 +35,24 @@ class NotificationText
         };
     }
 
+    /** Resultado de una disputa, contado desde el lado de quien lo lee. */
+    private static function disputeOutcome(array $d): string
+    {
+        $title = $d['listing_title'] ?? 'la operación';
+        $buyer = ($d['role'] ?? '') === 'buyer';
+        $what = match ($d['decision'] ?? '') {
+            'favor_comprador' => $buyer
+                ? "Moderación resolvió a tu favor: la operación de «{$title}» se canceló."
+                : "Moderación resolvió a favor del comprador: la operación de «{$title}» se canceló.",
+            'favor_vendedor' => $buyer
+                ? "Moderación resolvió a favor del vendedor: la operación de «{$title}» se dio por completada."
+                : "Moderación resolvió a tu favor: la operación de «{$title}» se dio por completada.",
+            default => "Moderación cerró la disputa de «{$title}»: la operación sigue su curso normal.",
+        };
+
+        return $what.(! empty($d['reason']) ? ' Nota: '.$d['reason'] : '');
+    }
+
     /** @return array{0: string, 1: string} [título, cuerpo] */
     public static function render(string $type, array $d): array
     {
@@ -60,6 +78,9 @@ class NotificationText
             'account_suspended' => ['Cuenta sancionada', 'Tu cuenta quedó sancionada hasta el '.($d['until_text'] ?? '').'. Mientras tanto no puedes publicar, escribir ni ofertar y tus publicaciones están ocultas. Motivo: '.($d['reason'] ?? 'sin especificar')],
             'account_deleted' => ['Cuenta eliminada', 'Moderación eliminó tu cuenta por incumplir las normas de AgroLink. Motivo: '.($d['reason'] ?? 'sin especificar')],
             'report_resolved' => ['Atendimos tu reporte', self::reportOutcome($d)],
+            'dispute_opened' => ['Disputa abierta', "$actor abrió una disputa por «{$title}»: ".($d['reason'] ?? 'problema con la operación').'. Da tu versión para que moderación decida.'],
+            'dispute_replied' => ['Respuesta en la disputa', "$actor dio su versión en la disputa de «{$title}». Moderación ya puede decidir."],
+            'dispute_resolved' => ['Disputa resuelta', self::disputeOutcome($d)],
             'verification_approved' => ['Vendedor verificado', 'Revisamos tu documentación: ya eres vendedor verificado.'],
             'verification_rejected' => ['Verificación rechazada', 'No pudimos verificar tu cuenta. Motivo: '.($d['reason'] ?? 'sin especificar')],
             default => ['Notificación', ''],

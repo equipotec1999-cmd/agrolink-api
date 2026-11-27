@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\MarketController;
+use App\Http\Controllers\Api\DisputeController;
+use App\Http\Controllers\Api\LegalController;
 use App\Http\Controllers\Api\ModerationController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OfferController;
@@ -37,11 +39,16 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/me/password', [AccountController::class, 'password'])->middleware('throttle:6,1');
     Route::post('/me/avatar', [AccountController::class, 'avatar'])->middleware('throttle:12,1');
     Route::delete('/me/avatar', [AccountController::class, 'deleteAvatar']);
+    Route::post('/me/accept-terms', [LegalController::class, 'accept']);
+    Route::post('/me/delete', [AccountController::class, 'destroy'])->middleware('throttle:5,1');
 });
 
 // Verificación en dos pasos, paso 2 del login: SOLO acepta el token pendiente.
 Route::post('/two-factor/challenge', [TwoFactorController::class, 'challenge'])
     ->middleware(['auth:sanctum', 'ability:two-factor-pending', 'throttle:6,1']);
+
+// Aviso de privacidad y términos: públicos (se leen antes de crear la cuenta).
+Route::get('/legal/{doc}', [LegalController::class, 'show'])->whereIn('doc', ['privacidad', 'terminos']);
 
 // Catálogo: lectura pública, no requiere sesión (se necesita para poder buscar sin cuenta).
 Route::get('/categories', [CatalogController::class, 'categories']);
@@ -84,6 +91,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
     Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send'])
         ->middleware('throttle:60,1');
+    Route::post('/conversations/{conversation}/location', [ConversationController::class, 'sendLocation'])
+        ->middleware('throttle:20,1');
 
     // Ofertas (Fase 5, bloque 2). Una oferta es un mensaje especial de la conversación.
     Route::post('/conversations/{conversation}/offers', [OfferController::class, 'store'])->middleware('throttle:30,1');
@@ -98,6 +107,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::post('/operations/{operation}/deliver', [OperationController::class, 'deliver'])->middleware('throttle:10,1');
     Route::post('/operations/{operation}/pin', [OperationController::class, 'regeneratePin'])->middleware('throttle:6,1');
     Route::post('/operations/{operation}/review', [ReviewController::class, 'store']);
+    Route::post('/operations/{operation}/dispute', [DisputeController::class, 'store'])->middleware('throttle:6,1');
+    Route::post('/operations/{operation}/dispute/reply', [DisputeController::class, 'reply'])->middleware('throttle:6,1');
     Route::get('/sellers/{user}/reviews', [ReviewController::class, 'forSeller']);
 
     // Notificaciones dentro de la app (Fase 5, bloque 4).
@@ -137,6 +148,8 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
             Route::get('/reports', [ModerationController::class, 'reports']);
             Route::post('/reports/{report}/resolve', [ModerationController::class, 'resolveReport']);
             Route::get('/reports/{report}/thread', [ModerationController::class, 'reportThread']);
+            Route::get('/disputes', [DisputeController::class, 'index']);
+            Route::post('/disputes/{dispute}/resolve', [DisputeController::class, 'resolve']);
         });
     });
 
