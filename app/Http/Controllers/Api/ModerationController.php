@@ -379,4 +379,24 @@ class ModerationController extends Controller
             // El aviso en la app ya quedó; el correo es un extra.
         }
     }
+
+    /**
+     * Prueba del correo: manda un mensaje a la cuenta de quien lo pide (nunca a otra) y
+     * devuelve el error real del proveedor. Render gratis no tiene consola, así que esta
+     * es la forma de diagnosticar Brevo desde la app.
+     */
+    public function mailTest(Request $request, ContactVerificationService $mail)
+    {
+        $to = $request->user()->correo;
+        $ok = $mail->deliver($to, 'Prueba de correo — AgroLink',
+            "Si lees esto, el correo de AgroLink funciona y los códigos de recuperar contraseña van a llegar.");
+
+        return response()->json([
+            'sent' => $ok,
+            'to' => $to,
+            'from' => config('services.brevo.from_email'),
+            'provider' => config('services.brevo.key') ? 'brevo' : (config('services.resend.key') ? 'resend' : null),
+            'error' => $ok ? null : $mail->lastError,
+        ]);
+    }
 }

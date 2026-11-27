@@ -151,7 +151,8 @@ class AuthController extends Controller
     {
         $data = $request->validate(['email' => ['required', 'email']]);
         $email = strtolower(trim($data['email']));
-        $user = \App\Models\User::where('correo', $email)->first();
+        // Sin distinguir mayúsculas: una cuenta registrada como «Ana@Gmail.com» también recibe el código.
+        $user = \App\Models\User::whereRaw('lower(correo) = ?', [$email])->whereNull('eliminado_en')->first();
         if ($user) {
             $verify->sendPasswordReset($user, $email);
         }

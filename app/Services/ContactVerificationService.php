@@ -97,8 +97,13 @@ class ContactVerificationService
      * Manda un correo por el primer proveedor que funcione: Brevo → Resend → MAIL_* (SMTP/log).
      * Devuelve true solo si un proveedor real lo aceptó. Público para el comando agrolink:probar-correo.
      */
+    /** Motivo del último fallo de envío (para la prueba de correo de moderación). */
+    public ?string $lastError = null;
+
     public function deliver(string $to, string $subject, string $text): bool
     {
+        $this->lastError = null;
+        $errors = [];
         $brevo = config('services.brevo.key');
         if ($brevo && config('services.brevo.from_email')) {
             try {
@@ -117,7 +122,11 @@ class ContactVerificationService
 
                 return true;
             } catch (\Throwable $e) {
-                Log::warning('No se pudo enviar correo por Brevo', ['error' => $e->getMessage()]);
+                $msg = $e instanceof \Illuminate\Http\Client\RequestException
+                    ? $e->response->status().' '.$e->response->body()
+                    : $e->getMessage();
+                $errors[] = 'Brevo: '.$msg;
+                Log::warning('No se pudo enviar correo por Brevo', ['error' => $msg]);
             }
         }
 
@@ -136,6 +145,7 @@ class ContactVerificationService
 
                 return true;
             } catch (\Throwable $e) {
+                $errors[] = 'Resend: '.$e->getMessage();
                 Log::warning('No se pudo enviar correo por Resend', ['error' => $e->getMessage()]);
             }
         }
@@ -146,9 +156,17 @@ class ContactVerificationService
 
                 return true;
             } catch (\Throwable $e) {
+                $errors[] = 'MAIL: '.$e->getMessage();
                 Log::warning('No se pudo enviar correo por MAIL_*', ['error' => $e->getMessage()]);
             }
         }
+
+        if (! $brevo && ! $resend) {
+            $errors[] = 'No hay proveedor configurado: falta BREVO_API_KEY en Render.';
+        } elseif ($brevo && ! config('services.brevo.from_email')) {
+            $errors[] = 'Falta BREVO_FROM_EMAIL en Render.';
+        }
+        $this->lastError = implode(' | ', $errors) ?: 'Error desconocido.';
 
         return false;
     }

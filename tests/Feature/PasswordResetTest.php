@@ -50,4 +50,24 @@ class PasswordResetTest extends ApiTestCase
             'password' => 'NuevaClave1',
         ])->assertUnprocessable();
     }
+
+    public function test_el_codigo_llega_aunque_la_cuenta_tenga_mayusculas(): void
+    {
+        $user = User::factory()->create(['correo' => 'Ana.Campo@Gmail.com']);
+
+        $this->postJson('/api/forgot-password', ['email' => 'ana.campo@gmail.com'])->assertOk();
+
+        $this->assertDatabaseHas('codigos_verificacion_contacto', ['usuario_id' => $user->id, 'canal' => 'password_reset']);
+    }
+
+    public function test_prueba_de_correo_solo_para_moderacion_y_dice_por_que_falla(): void
+    {
+        config(['services.brevo.key' => null, 'services.resend.key' => null]);
+
+        $this->as($this->makeUser())->postJson('/api/moderation/mail-test')->assertForbidden();
+        $this->as($this->makeUser('moderador'))->postJson('/api/moderation/mail-test')
+            ->assertOk()
+            ->assertJsonPath('sent', false)
+            ->assertJsonPath('error', fn ($e) => str_contains($e, 'BREVO_API_KEY'));
+    }
 }

@@ -149,6 +149,7 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
             Route::post('/reports/{report}/resolve', [ModerationController::class, 'resolveReport']);
             Route::get('/reports/{report}/thread', [ModerationController::class, 'reportThread']);
             Route::get('/disputes', [DisputeController::class, 'index']);
+            Route::post('/mail-test', [ModerationController::class, 'mailTest'])->middleware('throttle:5,1');
             Route::post('/disputes/{dispute}/resolve', [DisputeController::class, 'resolve']);
         });
     });
