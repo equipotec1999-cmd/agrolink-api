@@ -34,19 +34,12 @@ class ListingController extends Controller
     {
         $this->listings->purgeExpiredDrafts();
 
-        $query = Listing::query()
-            ->with([
-                'productType', 'user.sellerProfile', 'media',
-                'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
-                    DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
-                    DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
-                ]),
-            ])
-            ->where('estatus', 'publicada')
-            // Vendedores sancionados o eliminados no aparecen en el feed.
-            ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('usuarios as u')
-                ->whereColumn('u.id', 'publicaciones.usuario_id')
-                ->where(fn ($w) => $w->whereNotNull('u.eliminado_en')->orWhere('u.suspendido_hasta', '>', now())));
+        $query = $this->publicQuery();
+
+        // Perfil público de un usuario: solo sus publicaciones.
+        if ($request->filled('seller_id')) {
+            $query->where('usuario_id', $request->integer('seller_id'));
+        }
 
         if ($request->filled('product_type_id')) {
             $query->where('tipo_producto_id', $request->integer('product_type_id'));
@@ -69,6 +62,47 @@ class ListingController extends Controller
         $listings = $query->orderByDesc('publicado_en')->paginate($perPage);
 
         return ListingResource::collection($listings);
+    }
+
+    /** Publicaciones visibles para todos (publicadas y de vendedores sin sanción), con lo que pinta una tarjeta. */
+    private function publicQuery()
+    {
+        return Listing::query()
+            ->with([
+                'productType', 'user.sellerProfile', 'media',
+                'location' => fn ($q) => $q->select(['publicacion_id', 'estado', 'municipio', 'codigo_postal'])->addSelect([
+                    DB::raw('ST_Y(ubicacion_aproximada::geometry) as approx_lat'),
+                    DB::raw('ST_X(ubicacion_aproximada::geometry) as approx_lng'),
+                ]),
+            ])
+            ->where('estatus', 'publicada')
+            // Vendedores sancionados o eliminados no aparecen en el feed.
+            ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('usuarios as u')
+                ->whereColumn('u.id', 'publicaciones.usuario_id')
+                ->where(fn ($w) => $w->whereNotNull('u.eliminado_en')->orWhere('u.suspendido_hasta', '>', now())));
+    }
+
+    /**
+     * Recomendados al final de una publicación: primero el mismo tipo de producto, luego la
+     * misma categoría y al final lo más nuevo; nunca la misma publicación.
+     */
+    public function recommended(Request $request, Listing $listing)
+    {
+        $categoryId = $listing->productType?->categoria_id;
+        $limit = min(max($request->integer('limit', 10), 1), 20);
+
+        $items = $this->publicQuery()
+            ->where('publicaciones.id', '!=', $listing->id)
+            ->orderByRaw('CASE WHEN tipo_producto_id = ? THEN 0 ELSE 1 END', [$listing->tipo_producto_id])
+            ->orderByRaw(
+                'CASE WHEN tipo_producto_id IN (SELECT id FROM tipos_producto WHERE categoria_id = ?) THEN 0 ELSE 1 END',
+                [$categoryId ?? 0]
+            )
+            ->orderByDesc('publicado_en')
+            ->limit($limit)
+            ->get();
+
+        return ListingResource::collection($items);
     }
 
     /** Mis publicaciones en cualquier estado (borrador, publicada, rechazada...), las más nuevas primero. */

@@ -61,6 +61,10 @@ Route::get('/market/prices', [MarketController::class, 'prices'])->middleware('t
 // Listings: lectura pública; escritura requiere sesión.
 Route::get('/listings', [ListingController::class, 'index']);
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
+Route::get('/listings/{listing}/recommended', [ListingController::class, 'recommended'])->middleware('throttle:60,1');
+// Perfil público de un usuario (sus publicaciones salen de /listings?seller_id=).
+Route::get('/users/{user}/public', [\App\Http\Controllers\Api\PublicProfileController::class, 'show'])
+    ->whereNumber('user')->middleware('throttle:60,1');
 // Archivo de un documento: enlace firmado y temporal que solo reciben el dueño y moderación.
 Route::get('/listing-documents/{document}/file', [ListingController::class, 'documentFile'])
     ->middleware('signed:relative')
