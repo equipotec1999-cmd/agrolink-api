@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict XFVKri5PWoOEmBSXdjupzusM8HUIckibM5mI9OHWk4HvrJkp4q9MZDu2DvaQPzT
+\restrict PgsIMNgUPoi92f7tchYwHjQWU4x9WqhfSjvtQb0IoduWu4nd5aRQqHil99rWzsI
 
 -- Dumped from database version 16.4 (Debian 16.4-1.pgdg110+2)
 -- Dumped by pg_dump version 18.7 (Ubuntu 18.7-1.pgdg26.04+5)
@@ -1305,6 +1305,7 @@ CREATE TABLE public.publicaciones (
     actualizado_en timestamp(0) without time zone,
     eliminado_en timestamp(0) without time zone,
     motivo_moderacion character varying(300),
+    destacada_hasta timestamp(0) without time zone,
     CONSTRAINT publicaciones_estatus_check CHECK (((estatus)::text = ANY ((ARRAY['borrador'::character varying, 'en_revision'::character varying, 'publicada'::character varying, 'rechazada'::character varying, 'suspended'::character varying, 'sold'::character varying, 'vencida'::character varying, 'archivada'::character varying])::text[]))),
     CONSTRAINT publicaciones_estatus_moderacion_check CHECK (((estatus_moderacion)::text = ANY ((ARRAY['pendiente'::character varying, 'aprobada'::character varying, 'rechazada'::character varying])::text[]))),
     CONSTRAINT publicaciones_modalidad_venta_check CHECK (((modalidad_venta)::text = ANY ((ARRAY['individual'::character varying, 'lot'::character varying])::text[]))),
@@ -1512,6 +1513,46 @@ CREATE TABLE public.sessions (
 
 
 --
+-- Name: solicitudes_destacado; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.solicitudes_destacado (
+    id bigint NOT NULL,
+    usuario_id bigint NOT NULL,
+    tipo character varying(20) NOT NULL,
+    publicacion_id bigint,
+    dias smallint NOT NULL,
+    monto numeric(10,2) NOT NULL,
+    moneda character varying(3) DEFAULT 'MXN'::character varying NOT NULL,
+    estatus character varying(20) DEFAULT 'pendiente_pago'::character varying NOT NULL,
+    revisado_por bigint,
+    nota character varying(300),
+    activada_en timestamp(0) without time zone,
+    creado_en timestamp(0) without time zone,
+    actualizado_en timestamp(0) without time zone
+);
+
+
+--
+-- Name: solicitudes_destacado_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.solicitudes_destacado_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: solicitudes_destacado_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.solicitudes_destacado_id_seq OWNED BY public.solicitudes_destacado.id;
+
+
+--
 -- Name: solicitudes_verificacion; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1699,7 +1740,8 @@ CREATE TABLE public.usuarios (
     motivo_eliminacion character varying(500),
     advertencias smallint DEFAULT '0'::smallint NOT NULL,
     terminos_version character varying(20),
-    terminos_aceptados_en timestamp(0) without time zone
+    terminos_aceptados_en timestamp(0) without time zone,
+    destacado_hasta timestamp(0) without time zone
 );
 
 
@@ -2014,6 +2056,13 @@ ALTER TABLE ONLY public.resenas ALTER COLUMN id SET DEFAULT nextval('public.rese
 --
 
 ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
+
+
+--
+-- Name: solicitudes_destacado id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solicitudes_destacado ALTER COLUMN id SET DEFAULT nextval('public.solicitudes_destacado_id_seq'::regclass);
 
 
 --
@@ -2594,6 +2643,14 @@ ALTER TABLE ONLY public.sessions
 
 
 --
+-- Name: solicitudes_destacado solicitudes_destacado_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solicitudes_destacado
+    ADD CONSTRAINT solicitudes_destacado_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: solicitudes_verificacion solicitudes_verificacion_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2937,6 +2994,13 @@ CREATE INDEX publicaciones_busqueda_tsv_idx ON public.publicaciones USING gin (t
 
 
 --
+-- Name: publicaciones_destacada_hasta_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX publicaciones_destacada_hasta_idx ON public.publicaciones USING btree (destacada_hasta) WHERE (destacada_hasta IS NOT NULL);
+
+
+--
 -- Name: publicaciones_estatus_tipo_pub_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3014,6 +3078,20 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 
 
 --
+-- Name: solicitudes_destacado_estatus_creado_en_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX solicitudes_destacado_estatus_creado_en_index ON public.solicitudes_destacado USING btree (estatus, creado_en);
+
+
+--
+-- Name: solicitudes_destacado_usuario_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX solicitudes_destacado_usuario_id_index ON public.solicitudes_destacado USING btree (usuario_id);
+
+
+--
 -- Name: solicitudes_verificacion_una_pendiente; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3046,6 +3124,13 @@ CREATE INDEX tokens_dispositivo_usuario_id_index ON public.tokens_dispositivo US
 --
 
 CREATE INDEX ubicaciones_publicacion_aprox_gix ON public.ubicaciones_publicacion USING gist (ubicacion_aproximada);
+
+
+--
+-- Name: usuarios_destacado_hasta_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX usuarios_destacado_hasta_idx ON public.usuarios USING btree (destacado_hasta) WHERE (destacado_hasta IS NOT NULL);
 
 
 --
@@ -3606,6 +3691,30 @@ ALTER TABLE ONLY public.role_has_permissions
 
 
 --
+-- Name: solicitudes_destacado solicitudes_destacado_publicacion_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solicitudes_destacado
+    ADD CONSTRAINT solicitudes_destacado_publicacion_id_foreign FOREIGN KEY (publicacion_id) REFERENCES public.publicaciones(id) ON DELETE CASCADE;
+
+
+--
+-- Name: solicitudes_destacado solicitudes_destacado_revisado_por_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solicitudes_destacado
+    ADD CONSTRAINT solicitudes_destacado_revisado_por_foreign FOREIGN KEY (revisado_por) REFERENCES public.usuarios(id) ON DELETE SET NULL;
+
+
+--
+-- Name: solicitudes_destacado solicitudes_destacado_usuario_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.solicitudes_destacado
+    ADD CONSTRAINT solicitudes_destacado_usuario_id_foreign FOREIGN KEY (usuario_id) REFERENCES public.usuarios(id) ON DELETE CASCADE;
+
+
+--
 -- Name: solicitudes_verificacion solicitudes_verificacion_revisado_por_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3713,5 +3822,5 @@ ALTER TABLE ONLY public.vendedores_seguidos
 -- PostgreSQL database dump complete
 --
 
-\unrestrict XFVKri5PWoOEmBSXdjupzusM8HUIckibM5mI9OHWk4HvrJkp4q9MZDu2DvaQPzT
+\unrestrict PgsIMNgUPoi92f7tchYwHjQWU4x9WqhfSjvtQb0IoduWu4nd5aRQqHil99rWzsI
 
