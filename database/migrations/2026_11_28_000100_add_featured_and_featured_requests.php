@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Destacados: publicaciones y perfiles que salen primero (los activa moderación) y las
- * solicitudes de destacado pagado (30 MXN el primer día, 1 peso menos cada día extra, mínimo 18).
+ * solicitudes de destacado pagado (precio en App\Support\FeaturedPricing).
  */
 return new class extends Migration
 {

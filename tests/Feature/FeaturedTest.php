@@ -8,20 +8,20 @@ use Tests\ApiTestCase;
 
 class FeaturedTest extends ApiTestCase
 {
-    public function test_precio_baja_un_peso_por_dia_sin_bajar_de_18(): void
+    public function test_precio_baja_un_peso_por_dia_sin_bajar_de_8(): void
     {
-        $this->assertSame(30, FeaturedPricing::total(1));
-        $this->assertSame(59, FeaturedPricing::total(2));
-        $this->assertSame(87, FeaturedPricing::total(3));
-        $this->assertSame(114, FeaturedPricing::total(4));
-        $this->assertSame(18, FeaturedPricing::dayPrice(13));
-        $this->assertSame(18, FeaturedPricing::dayPrice(40));
-        // 30+29+...+19 (12 días) = 294; después 18 por día.
-        $this->assertSame(294 + 18 * 3, FeaturedPricing::total(15));
+        $this->assertSame(20, FeaturedPricing::total(1));
+        $this->assertSame(39, FeaturedPricing::total(2));
+        $this->assertSame(57, FeaturedPricing::total(3));
+        $this->assertSame(74, FeaturedPricing::total(4));
+        $this->assertSame(8, FeaturedPricing::dayPrice(13));
+        $this->assertSame(8, FeaturedPricing::dayPrice(40));
+        // 20+19+...+9 (12 días) = 174; después 8 por día.
+        $this->assertSame(174 + 8 * 3, FeaturedPricing::total(15));
 
         $this->getJson('/api/featured/pricing?days=3')->assertOk()
-            ->assertJsonPath('data.total', 87)
-            ->assertJsonPath('data.per_day', [30, 29, 28])
+            ->assertJsonPath('data.total', 57)
+            ->assertJsonPath('data.per_day', [20, 19, 18])
             ->assertJsonPath('data.savings', 3)
             ->assertJsonPath('data.enabled', false);
     }
@@ -43,7 +43,7 @@ class FeaturedTest extends ApiTestCase
 
         $id = $this->as($seller)->postJson('/api/featured/requests', ['type' => 'listing', 'listing_id' => $listing->id, 'days' => 3])
             ->assertCreated()
-            ->assertJsonPath('data.amount', 87)
+            ->assertJsonPath('data.amount', 57)
             ->assertJsonPath('data.status', 'pendiente_pago')
             ->json('data.id');
 
@@ -89,7 +89,7 @@ class FeaturedTest extends ApiTestCase
     {
         $seller = $this->makeUser('vendedor');
         $req = FeaturedRequest::create([
-            'usuario_id' => $seller->id, 'tipo' => 'perfil', 'dias' => 2, 'monto' => 59, 'estatus' => 'pendiente_pago',
+            'usuario_id' => $seller->id, 'tipo' => 'perfil', 'dias' => 2, 'monto' => 39, 'estatus' => 'pendiente_pago',
         ]);
         $this->as($this->makeUser('moderador'))->postJson("/api/moderation/featured-requests/{$req->id}/reject", ['reason' => 'No se recibió el pago'])
             ->assertOk()->assertJsonPath('data.status', 'rechazada');

@@ -3,15 +3,15 @@
 namespace App\Support;
 
 /**
- * Precio de destacar (publicación o perfil): el primer día cuesta 30 MXN y cada día extra
- * un peso menos que el anterior, sin bajar de 18 MXN por día.
- *   1 día = 30 · 2 días = 30+29 = 59 · 3 días = 30+29+28 = 87 · ... · del día 13 en adelante, 18 c/u.
+ * Precio de destacar (publicación o perfil): el primer día cuesta 20 MXN y cada día extra
+ * un peso menos que el anterior, sin bajar de 8 MXN por día.
+ *   1 día = 20 · 2 días = 20+19 = 39 · 3 días = 20+19+18 = 57 · ... · del día 13 en adelante, 8 c/u.
  */
 final class FeaturedPricing
 {
-    public const FIRST_DAY = 30;
+    public const FIRST_DAY = 20;
 
-    public const MIN_DAY = 18;
+    public const MIN_DAY = 8;
 
     public const MAX_DAYS = 60;
 

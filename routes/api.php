@@ -60,6 +60,8 @@ Route::get('/market/prices', [MarketController::class, 'prices'])->middleware('t
 
 // Listings: lectura pública; escritura requiere sesión.
 Route::get('/listings', [ListingController::class, 'index']);
+// «Destacados de la semana»: pagados vigentes + 4 gratis por mérito que rotan cada 2 días.
+Route::get('/listings/weekly', [ListingController::class, 'weekly'])->middleware('throttle:60,1');
 Route::get('/listings/{listing}', [ListingController::class, 'show']);
 Route::get('/listings/{listing}/recommended', [ListingController::class, 'recommended'])->middleware('throttle:60,1');
 // Perfil público de un usuario (sus publicaciones salen de /listings?seller_id=).

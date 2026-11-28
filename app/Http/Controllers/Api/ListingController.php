@@ -89,6 +89,33 @@ class ListingController extends Controller
     }
 
     /**
+     * «Destacados de la semana»: primero los destacados pagados (o puestos por moderación)
+     * mientras dure su tiempo, luego hasta 4 gratis elegidos por mérito (ver WeeklyPicksService).
+     * Cada elemento trae weekly_kind: paid | merit.
+     */
+    public function weekly(Request $request)
+    {
+        $paid = $this->publicQuery()
+            ->where('destacada_hasta', '>', now())
+            ->orderByDesc('destacada_hasta')
+            ->limit(20)
+            ->get();
+
+        $meritIds = array_values(array_diff(\App\Services\WeeklyPicksService::currentIds(), $paid->pluck('id')->all()));
+        $merit = $meritIds === [] ? collect() : $this->publicQuery()->whereIn('publicaciones.id', $meritIds)->get()
+            ->sortBy(fn ($l) => array_search($l->id, $meritIds, true))->values();
+
+        $data = $paid->map(fn ($l) => (new ListingResource($l))->resolve($request) + ['weekly_kind' => 'paid'])
+            ->concat($merit->map(fn ($l) => (new ListingResource($l))->resolve($request) + ['weekly_kind' => 'merit']))
+            ->values();
+
+        return response()->json([
+            'data' => $data,
+            'rotates_at' => \Carbon\Carbon::createFromTimestamp((\App\Services\WeeklyPicksService::window() + 1) * \App\Services\WeeklyPicksService::WINDOW_SECONDS)->toIso8601String(),
+        ]);
+    }
+
+    /**
      * Recomendados al final de una publicación: primero el mismo tipo de producto, luego la
      * misma categoría y al final lo más nuevo; nunca la misma publicación.
      */
