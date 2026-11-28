@@ -65,6 +65,9 @@ Route::get('/listings/{listing}/recommended', [ListingController::class, 'recomm
 // Perfil público de un usuario (sus publicaciones salen de /listings?seller_id=).
 Route::get('/users/{user}/public', [\App\Http\Controllers\Api\PublicProfileController::class, 'show'])
     ->whereNumber('user')->middleware('throttle:60,1');
+// Buscar perfiles por nombre y precio de destacar (públicos).
+Route::get('/users/search', [\App\Http\Controllers\Api\UserSearchController::class, 'index'])->middleware('throttle:60,1');
+Route::get('/featured/pricing', [\App\Http\Controllers\Api\FeaturedController::class, 'pricing']);
 // Archivo de un documento: enlace firmado y temporal que solo reciben el dueño y moderación.
 Route::get('/listing-documents/{document}/file', [ListingController::class, 'documentFile'])
     ->middleware('signed:relative')
@@ -72,6 +75,10 @@ Route::get('/listing-documents/{document}/file', [ListingController::class, 'doc
 
 Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
     Route::get('/my/listings', [ListingController::class, 'mine']);
+    // Destacados pagados (apagados hasta FEATURED_SALES_ENABLED=true).
+    Route::post('/featured/requests', [\App\Http\Controllers\Api\FeaturedController::class, 'store'])->middleware('throttle:10,1');
+    Route::get('/my/featured-requests', [\App\Http\Controllers\Api\FeaturedController::class, 'mine']);
+    Route::post('/featured/requests/{featuredRequest}/cancel', [\App\Http\Controllers\Api\FeaturedController::class, 'cancel']);
     Route::post('/listings', [ListingController::class, 'store']);
     Route::patch('/listings/{listing}', [ListingController::class, 'update']);
     Route::delete('/listings/{listing}', [ListingController::class, 'destroy']);
@@ -149,6 +156,14 @@ Route::middleware(['auth:sanctum', 'full.session'])->group(function () {
             Route::post('/listings/{listing}/reject', [ModerationController::class, 'reject']);
             Route::post('/listings/{listing}/suspend', [ModerationController::class, 'suspend']);
             Route::delete('/listings/{listing}', [ModerationController::class, 'destroy'])->withTrashed();
+            // Destacados: publicaciones, perfiles y solicitudes pagadas.
+            Route::post('/listings/{listing}/feature', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'featureListing']);
+            Route::delete('/listings/{listing}/feature', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'unfeatureListing']);
+            Route::post('/users/{user}/feature', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'featureUser']);
+            Route::delete('/users/{user}/feature', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'unfeatureUser']);
+            Route::get('/featured-requests', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'requests']);
+            Route::post('/featured-requests/{featuredRequest}/activate', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'activate']);
+            Route::post('/featured-requests/{featuredRequest}/reject', [\App\Http\Controllers\Api\FeaturedModerationController::class, 'reject']);
         });
         Route::middleware('can:moderate documents')->group(function () {
             Route::get('/verifications', [VerificationReviewController::class, 'index']);

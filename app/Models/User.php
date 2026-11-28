@@ -69,6 +69,7 @@ class User extends Authenticatable
         return [
             'correo_verificado_en' => 'datetime',
             'suspendido_hasta' => 'datetime',
+            'destacado_hasta' => 'datetime',
             'eliminado_en' => 'datetime',
             'dos_factores_confirmado_en' => 'datetime',
             'contrasena' => 'hashed',

@@ -42,6 +42,7 @@ class Listing extends Modelo
     {
         return [
             'precio' => 'decimal:2',
+            'destacada_hasta' => 'datetime',
             'cantidad' => 'decimal:2',
             'negociable' => 'boolean',
             'atributos_cache' => 'array',

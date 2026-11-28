@@ -153,6 +153,21 @@ class NotificationService
         self::put($userId, $type, ['reason' => $reason]);
     }
 
+    /** Destacado activado (por moderación o por pago confirmado). $kind: listing | profile */
+    public static function featuredActivated(int $userId, string $kind, ?string $listingTitle, \DateTimeInterface $until): void
+    {
+        self::put($userId, 'featured_activated', [
+            'kind' => $kind,
+            'listing_title' => $listingTitle,
+            'until_text' => \Carbon\Carbon::instance($until)->timezone('America/Merida')->format('d/m/Y H:i'),
+        ]);
+    }
+
+    public static function featuredRejected(int $userId, string $reason): void
+    {
+        self::put($userId, 'featured_rejected', ['reason' => $reason]);
+    }
+
     /** Aviso a la cuenta sancionada: account_warning | account_suspended | account_deleted. */
     public static function accountSanctioned(string $type, User $user, string $reason, ?\DateTimeInterface $until = null): void
     {

@@ -41,6 +41,11 @@ class ListingController extends Controller
             $query->where('usuario_id', $request->integer('seller_id'));
         }
 
+        // Solo destacadas (carrusel «Destacados» de Inicio).
+        if ($request->boolean('featured')) {
+            $query->where('destacada_hasta', '>', now());
+        }
+
         if ($request->filled('product_type_id')) {
             $query->where('tipo_producto_id', $request->integer('product_type_id'));
         }
@@ -59,7 +64,8 @@ class ListingController extends Controller
 
         // `per_page` lo pide la app (hasta 50); sin él, 20 como siempre. Tope para que nadie pida todo de golpe.
         $perPage = min(max($request->integer('per_page', 20), 1), 50);
-        $listings = $query->orderByDesc('publicado_en')->paginate($perPage);
+        // Las destacadas vigentes salen primero.
+        $listings = $query->orderByRaw('CASE WHEN destacada_hasta > NOW() THEN 0 ELSE 1 END')->orderByDesc('publicado_en')->paginate($perPage);
 
         return ListingResource::collection($listings);
     }

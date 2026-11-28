@@ -35,6 +35,8 @@ class PublicProfileController extends Controller
             'state' => $u->profile?->estado,
             'municipality' => $u->profile?->municipio,
             'is_verified' => (bool) $u->sellerProfile?->verificado,
+            'is_featured' => $u->destacado_hasta !== null && now()->lessThan($u->destacado_hasta),
+            'featured_until' => $u->destacado_hasta,
             'member_since' => $u->creado_en?->year,
             'completed_operations' => (int) ($u->sellerProfile?->operaciones_completadas ?? 0),
             'reviews_count' => (int) ($stats->total ?? 0),

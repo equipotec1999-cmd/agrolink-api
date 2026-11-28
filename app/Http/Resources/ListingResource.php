@@ -37,6 +37,8 @@ class ListingResource extends JsonResource
             'unit' => $this->unidad,
             'sale_mode' => $this->modalidad_venta,
             'negotiable' => $this->negociable,
+            'featured' => $this->destacada_hasta !== null && now()->lessThan($this->destacada_hasta),
+            'featured_until' => $this->destacada_hasta,
             'status' => $this->estatus,
             'moderation_status' => $this->estatus_moderacion,
             'published_at' => $this->publicado_en,
